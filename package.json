@@ -5,8 +5,11 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "webpack-dev-server",
-    "build": "webpack"
+    "dev:server": "tsc --pretty -w -p server/tsconfig.json",
+    "dev:client": "webpack -w",
+    "build:client": "webpack",
+    "build:server": "tsc --pretty -p server/tsconfig.json",
+    "start": "node server/index.js"
   },
   "author": "Cameron Little <cameron@camlittle.com>",
   "license": "MIT",
