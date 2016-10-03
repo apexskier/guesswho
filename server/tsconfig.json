@@ -1,0 +1,23 @@
+{
+    "compilerOptions": {
+        "sourceMap": true,
+        "noImplicitAny": true,
+        "module": "commonjs",
+        "target": "es5",
+        "experimentalDecorators": true,
+        "moduleResolution": "node"
+    },
+    "filesGlob": [
+        "../typings/**/*.ts",
+        "../typings/**/*.tsx",
+        "../common/**/*.ts",
+        "../common/**/*.tsx",
+        "./**/*.ts",
+        "./**/*.tsx"
+    ],
+    "include": [
+        "../typings/**/*",
+        "../common/**/*",
+        "./**/*"
+    ]
+}
