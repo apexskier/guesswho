@@ -1,7 +1,8 @@
 node_modules/
 .DS_Store
 dist/
-src/**/*.js
-src/**/*.js.map
+client/**/*.js
+client/**/*.js.map
 server/**/*.js
 server/**/*.js.map
+typings

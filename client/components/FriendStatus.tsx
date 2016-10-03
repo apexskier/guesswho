@@ -3,7 +3,7 @@ import * as React from "react";
 interface FriendStatusProps {
     friend: UserInfo;
     status?: UserStatus;
-    onClick: Function;
+    onClick: (event: React.MouseEvent) => void;
 }
 
 export default function Login(props: FriendStatusProps): JSX.Element {

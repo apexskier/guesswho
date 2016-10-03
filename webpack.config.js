@@ -20,7 +20,7 @@ module.exports = {
     stats,
 
     entry: [
-        './src/index.tsx',
+        './client/index.tsx',
     ],
 
     output: {
