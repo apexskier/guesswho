@@ -6,9 +6,47 @@ import requestLogger from "./middleware/requestLogger";
 import * as gameLogic from "./gameLogic";
 
 
+function shuffle<T>(array: T[]) {
+    let currentIndex = array.length;
+    let copy = array.slice();
+
+    // While there remain elements to shuffle...
+    while (0 !== currentIndex) {
+        // Pick a remaining element...
+        const randomIndex = Math.floor(Math.random() * currentIndex);
+        currentIndex -= 1;
+
+        // And swap it with the current element.
+        const temporaryValue = copy[currentIndex];
+        copy[currentIndex] = copy[randomIndex];
+        copy[randomIndex] = temporaryValue;
+    }
+
+    return copy;
+}
+
 const knownPlayers: { [id: string]: Player } = {};
 const connectedPlayers: { [id: string]: SocketIO.Socket } = {};
 const activeGames: ServerGame[] = [];
+
+const range: number[] = [];
+for (let i = 0; i < 50; i++) range.push(i);
+const fakeFriends: UserInfo[] = range.map((_, i) => ({
+    name: `Chris ${i}`,
+    id: `fake-person-${i + 1}`,
+    picture: {
+        data: {
+            is_silhouette: false,
+            url: `static/people/image-${i + 1}.png`,
+        },
+    },
+}));
+
+function findGameForUser(user: string) {
+    return activeGames.find((g) => {
+        return g.playerA.player.user.id === user || g.playerB.player.user.id === user;
+    });
+}
 
 export default class WebApi {
     constructor(private app: express.Express, private port: number) {
@@ -27,12 +65,12 @@ export default class WebApi {
         });
         app.use("/", indexRouter);
         app.use("/dist", express.static(path.resolve(`${__dirname}/../dist`)));
+        app.use("/static", express.static(path.resolve(`${__dirname}/../static`)));
     }
 
     private initializeWebsocket(io: SocketIO.Server) {
         io.on("connection", (socket) => {
             let player: Player;
-            let onlineStatusInterval: NodeJS.Timer;
 
             function checkAuth(callback: (data: AuthedMessage) => void): (data: AuthedMessage) => void {
                 return (data: AuthedMessage) => {
@@ -42,6 +80,22 @@ export default class WebApi {
                         callback(data);
                     }
                 };
+            }
+
+            function updateStatus(status: UserStatus) {
+                if (!player) {
+                    console.warn("player disconnected, no updateStatu possible");
+                    return;
+                }
+                Object.keys(connectedPlayers).forEach((id) => {
+                    const connectedPlayer = knownPlayers[id];
+
+                    if (connectedPlayer.friendsInApp.some((friend) => friend === player.user.id )) {
+                        const data: { [id: string]: UserStatus } = {};
+                        data[player.user.id] = status;
+                        connectedPlayers[id].emit("onlineStatus", data);
+                    }
+                });
             }
 
             socket.on("init", (data: InitializationMessage) => {
@@ -57,22 +111,26 @@ export default class WebApi {
                     connectedPlayers[player.user.id].disconnect(true);
                 }
                 connectedPlayers[player.user.id] = socket;
-
-                onlineStatusInterval = setInterval(() => {
-                    const statuses: { [player: string]: UserStatus } = {};
-                    player.friendsInApp.forEach((friend) => {
-                        const game = activeGames.find((g) => {
-                            return g.playerA.player.user.id === friend || g.playerB.player.user.id === friend;
-                        });
-                        statuses[friend] = {
+                updateStatus({ online: true });
+                const statuses: { [id: string]: UserStatus } = {};
+                player.friendsInApp.forEach((friend) => {
+                    const friendPlayer = knownPlayers[friend];
+                    if (friendPlayer) {
+                        const status = {
                             online: friend in connectedPlayers,
-                        };
+                        } as UserStatus;
+                        const game = findGameForUser(friend);
                         if (game) {
-                            statuses[friend].playing = game.playerA.player.user.id === friend ? game.playerB.player.user : game.playerA.player.user;
+                            status.playing = game.playerA.player.user.id === friend ? game.playerB.player.user : game.playerA.player.user;
                         }
-                    });
-                    socket.emit("online", statuses);
-                }, 1000);
+                        statuses[friend] = status;
+                    }
+                });
+                socket.emit("onlineStatus", statuses);
+                const game = findGameForUser(player.user.id);
+                if (game) {
+                    socket.emit("gameUpdate", gameLogic.clientGameFor(game, player));
+                }
             });
 
             socket.on("start", checkAuth((data: GameStartMessage) => {
@@ -81,17 +139,23 @@ export default class WebApi {
                     console.log("recieved start", data, withPlayer.user);
                     if (withPlayer) {
                         const game = gameLogic.newGame(player, withPlayer);
+                        if (game.guessableFriends.length >= 16) {
+                            game.guessableFriends = shuffle(game.guessableFriends).slice(0, 16);
+                        } else {
+                            game.guessableFriends = game.guessableFriends.concat(shuffle(fakeFriends).slice(0, 16 - game.guessableFriends.length));
+                        }
                         activeGames.push(game);
 
-                        socket.emit("gameStart", gameLogic.gameForA(game));
-                        connectedPlayers[withPlayer.user.id].emit("gameStart", gameLogic.gameForB(game));
+                        socket.emit("gameUpdate", gameLogic.gameForA(game));
+                        connectedPlayers[withPlayer.user.id].emit("gameUpdate", gameLogic.gameForB(game));
+                        updateStatus({ online: true, playing: withPlayer.user });
                     }
                 }
             }));
 
             function logout() {
+                updateStatus({ online: false });
                 if (player) {
-                    clearInterval(onlineStatusInterval);
                     delete connectedPlayers[player.user.id];
                 }
             }

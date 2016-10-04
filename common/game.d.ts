@@ -14,8 +14,8 @@ declare interface GamePlayer {
 declare interface ServerGame {
     playerA: GamePlayer;
     playerB: GamePlayer;
-    whosTurn: GamePlayer;
-    winner?: GamePlayer;
+    whosTurn: string;
+    winner?: string;
     guessableFriends: UserInfo[];
 }
 
@@ -31,4 +31,4 @@ declare interface UserStatus {
     playing?: UserInfo;
 }
 
-declare enum TurnType { Guess, Question }
+declare const enum TurnType { Guess, Question }

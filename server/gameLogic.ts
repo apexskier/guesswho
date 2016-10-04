@@ -20,32 +20,33 @@ export function newGame(playerA: Player, playerB: Player): ServerGame {
     return {
         playerA: {
             player: playerA,
-            eliminatedFriends: [],
+            eliminatedFriends: [] as UserInfo[],
         },
         playerB: {
             player: playerB,
-            eliminatedFriends: [],
+            eliminatedFriends: [] as UserInfo[],
         },
-        whosTurn: this.playerA,
+        whosTurn: playerA.user.id,
         guessableFriends: mutualFriends(guessableFriends(playerA.friends), guessableFriends(playerB.friends)),
     };
 }
 
-function clientGameFor(game: ServerGame, player: GamePlayer) {
+export function clientGameFor(game: ServerGame, player: Player) {
+    const gamePlayer = game.playerA.player.user.id === player.user.id ? game.playerA : game.playerB;
     return {
-        yourTurn: player === game.whosTurn,
-        chosenFriend: player.chosenFriend,
-        eliminatedFriends: player.eliminatedFriends,
+        yourTurn: player.user.id === game.whosTurn,
+        chosenFriend: gamePlayer.chosenFriend,
+        eliminatedFriends: gamePlayer.eliminatedFriends,
         guessableFriends: game.guessableFriends,
     };
 }
 
 export function gameForA(game: ServerGame): ClientGame {
-    return clientGameFor(game, game.playerA);
+    return clientGameFor(game, game.playerA.player);
 }
 
 export function gameForB(game: ServerGame): ClientGame {
-    return clientGameFor(game, game.playerB);
+    return clientGameFor(game, game.playerB.player);
 }
 
 

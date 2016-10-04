@@ -5,7 +5,8 @@ import autobind = require("autobind-decorator");
 
 import Login from "./components/Login";
 import Logout from "./components/Logout";
-import FriendStatus from "./components/FriendStatus";
+import Landing from "./components/Landing";
+import Game from "./components/Game";
 
 
 interface AppProps {}
@@ -39,9 +40,10 @@ export default class App extends React.Component<AppProps, AppState> {
     }
 
     componentDidMount() {
-        this.socket.on("online", (data: { [player: string]: UserStatus }) => {
-            console.log("online ping", data);
-            this.setState({ onlineStatus: data });
+        this.socket.on("onlineStatus", (data: { [player: string]: UserStatus }) => {
+            this.setState({
+                onlineStatus: Object.assign(this.state.onlineStatus, data),
+            });
         });
     }
 
@@ -89,7 +91,8 @@ export default class App extends React.Component<AppProps, AppState> {
                     this.initServerConnection();
                     this.socket.on("connect", this.initServerConnection);
 
-                    this.socket.on("gameStart", (data: ServerGame) => {
+                    this.socket.on("gameUpdate", (data: ClientGame) => {
+                        this.setState({ activeGame: data });
                         console.log(data);
                     });
                 });
@@ -123,31 +126,29 @@ export default class App extends React.Component<AppProps, AppState> {
                         <Logout onLoggedOut={this.handleLoggedOut} />
                         <h1>Guess Who‽</h1>
                         {this.state.user ? <p>Logged in as: {this.state.user.name}</p> : null}
-                        {this.state.friendsInApp
+                        {this.state.activeGame
                             ? (
+                                <Game game={this.state.activeGame} socket={this.socket} />
+                            )
+                            : (
                                 <div>
-                                    <h3>Friends to play with</h3>
-                                    {this.state.friendsInApp.length === 0
-                                        ? <p>You have no friends using this app 😢. Invite some!</p>
-                                        : <ul>{this.state.friendsInApp.map(friend => (
-                                            <FriendStatus
-                                                key={friend.id}
-                                                friend={friend}
-                                                status={this.state.onlineStatus[friend.id]}
-                                                onClick={this.setUpWith(friend)}
-                                            />
-                                        ))}</ul>}
+                                    {this.state.friendsInApp ? (
+                                        <Landing
+                                            friends={this.state.friendsInApp}
+                                            friendsOnline={this.state.onlineStatus}
+                                            setUpGame={this.setUpWith}
+                                        />
+                                    ) : null}
+                                    {this.state.friends ? (
+                                        <div>
+                                            <h3>All friends</h3>
+                                            {this.state.friends.length === 0
+                                                ? <p>You have no friends?! 😱</p>
+                                                : <ul>{this.state.friends.map(friend => <li key={friend.id}><img src={friend.picture.data.url} alt={friend.name} /></li>)}</ul>}
+                                        </div>
+                                    ) : null}
                                 </div>
-                            ) : null}
-                        {this.state.friends
-                            ? (
-                                <div>
-                                    <h3>All friends</h3>
-                                    {this.state.friends.length === 0
-                                        ? <p>You have no friends?! 😱</p>
-                                        : <ul>{this.state.friends.map(friend => <li key={friend.id}><img src={friend.picture.data.url} alt={friend.name} /></li>)}</ul>}
-                                </div>
-                            ) : null}
+                            )}
                     </div>
                 );
             } else {
