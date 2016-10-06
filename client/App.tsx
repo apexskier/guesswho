@@ -45,19 +45,30 @@ export default class App extends React.Component<AppProps, AppState> {
                 onlineStatus: Object.assign(this.state.onlineStatus, data),
             });
         });
+
+        this.socket.on("gameUpdate", (data: ClientGame) => {
+            this.setState({ activeGame: data });
+            console.log(data);
+        });
+    }
+
+    componentWillUnmount() {
+        this.socket.off("onlineStatus");
+        this.socket.off("gameUpdate");
+        this.socket.off("connect");
     }
 
     checkLogin() {
         FB.getLoginStatus(response => {
             if (response.status === "connected") {
-                this.handleAuth(response.authResponse);
+                this.handleAuth(response.authResponse!);
             }
         });
     }
 
     handleFBError(error: FBError) {
         if (error.type === "OAuthException" && error.code === 463 || error.code === 467) {
-            this.setState({ user: null });
+            this.setState({ user: undefined });
         }
         console.error(error);
     }
@@ -68,8 +79,8 @@ export default class App extends React.Component<AppProps, AppState> {
             token: this.state.token,
             me: this.state.user,
             friends: this.state.friends,
-            friendsInApp: this.state.friendsInApp.map((f) => f.id),
-        } /* as InitializationMessage */);
+            friendsInApp: this.state.friendsInApp ? this.state.friendsInApp.map((f) => f.id) : undefined,
+        } as InitializationMessage);
     }
 
     @autobind
@@ -79,22 +90,17 @@ export default class App extends React.Component<AppProps, AppState> {
             if (response.error) this.handleFBError(response.error);
             this.setState({ user: response as UserInfo });
 
-            FB.api(`${this.state.user.id}/friends`, (response) => {
+            FB.api(`${this.state.user!.id}/friends`, (response) => {
                 if (response.error) this.handleFBError(response.error);
                 this.setState({ friendsInApp: response.data as UserInfo[] });
 
-                FB.api(`/${this.state.user.id}/taggable_friends`, (response) => {
+                FB.api(`/${this.state.user!.id}/taggable_friends`, (response) => {
                     if (response.error) this.handleFBError(response.error);
                     this.setState({
                         friends: response.data as UserInfo[]
                     });
                     this.initServerConnection();
                     this.socket.on("connect", this.initServerConnection);
-
-                    this.socket.on("gameUpdate", (data: ClientGame) => {
-                        this.setState({ activeGame: data });
-                        console.log(data);
-                    });
                 });
             });
         });
@@ -128,14 +134,18 @@ export default class App extends React.Component<AppProps, AppState> {
                         {this.state.user ? <p>Logged in as: {this.state.user.name}</p> : null}
                         {this.state.activeGame
                             ? (
-                                <Game game={this.state.activeGame} socket={this.socket} />
+                                <Game
+                                    token={this.state.token!}
+                                    game={this.state.activeGame}
+                                    socket={this.socket}
+                                />
                             )
                             : (
                                 <div>
                                     {this.state.friendsInApp ? (
                                         <Landing
                                             friends={this.state.friendsInApp}
-                                            friendsOnline={this.state.onlineStatus}
+                                            friendsOnline={this.state.onlineStatus!}
                                             setUpGame={this.setUpWith}
                                         />
                                     ) : null}
@@ -144,7 +154,17 @@ export default class App extends React.Component<AppProps, AppState> {
                                             <h3>All friends</h3>
                                             {this.state.friends.length === 0
                                                 ? <p>You have no friends?! 😱</p>
-                                                : <ul>{this.state.friends.map(friend => <li key={friend.id}><img src={friend.picture.data.url} alt={friend.name} /></li>)}</ul>}
+                                                : (
+                                                    <ul>
+                                                        {this.state.friends.map((friend) => (
+                                                            <li key={friend.id}>
+                                                                {friend.picture ?
+                                                                    <img src={friend.picture.data.url} alt={friend.name} /> :
+                                                                    <p>{friend.name}</p>}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                )}
                                         </div>
                                     ) : null}
                                 </div>

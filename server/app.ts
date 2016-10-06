@@ -28,6 +28,7 @@ function shuffle<T>(array: T[]) {
 const knownPlayers: { [id: string]: Player } = {};
 const connectedPlayers: { [id: string]: SocketIO.Socket } = {};
 const activeGames: ServerGame[] = [];
+const gamesByPlayer: { [id: string]: ServerGame } = {};
 
 const range: number[] = [];
 for (let i = 0; i < 50; i++) range.push(i);
@@ -42,10 +43,8 @@ const fakeFriends: UserInfo[] = range.map((_, i) => ({
     },
 }));
 
-function findGameForUser(user: string) {
-    return activeGames.find((g) => {
-        return g.playerA.player.user.id === user || g.playerB.player.user.id === user;
-    });
+function findGameForUser(userId: string) {
+    return gamesByPlayer[userId];
 }
 
 export default class WebApi {
@@ -137,6 +136,7 @@ export default class WebApi {
                 const withPlayer = knownPlayers[data.with];
                 if (withPlayer) {
                     console.log("recieved start", data, withPlayer.user);
+                    // TODO: Check that user isn't already in game
                     if (withPlayer) {
                         const game = gameLogic.newGame(player, withPlayer);
                         if (game.guessableFriends.length >= 16) {
@@ -145,10 +145,92 @@ export default class WebApi {
                             game.guessableFriends = game.guessableFriends.concat(shuffle(fakeFriends).slice(0, 16 - game.guessableFriends.length));
                         }
                         activeGames.push(game);
+                        gamesByPlayer[withPlayer.user.id] = game;
+                        gamesByPlayer[player.user.id] = game;
 
                         socket.emit("gameUpdate", gameLogic.gameForA(game));
                         connectedPlayers[withPlayer.user.id].emit("gameUpdate", gameLogic.gameForB(game));
                         updateStatus({ online: true, playing: withPlayer.user });
+                    }
+                }
+            }));
+
+            function actionRequested(action: ClientActionResponse) {
+                const game = findGameForUser(player.user.id);
+                if (game !== undefined) {
+                    const type = action.type;
+                    if (game.state.player === "both" || game.state.player!.player === player) {
+                        if (game.state.type === type) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
+
+            function requestAction(action: ClientActionRequest, whoFor: GamePlayer | "both") {
+                const newGameState: GameState = {
+                    type: action,
+                    player: whoFor,
+                };
+                if (whoFor === "both") {
+                    const game = findGameForUser(player.user.id);
+                    findGameForUser(game.playerA.player.user.id).state = newGameState;
+                    findGameForUser(game.playerB.player.user.id).state = newGameState;
+                    connectedPlayers[game.playerA.player.user.id].emit("clientRequest", action);
+                    connectedPlayers[game.playerB.player.user.id].emit("clientRequest", action);
+                } else {
+                    findGameForUser((whoFor as GamePlayer).player!.user.id).state = newGameState;
+                    connectedPlayers[(whoFor as GamePlayer).player!.user.id].emit("clientRequest", action);
+                }
+            }
+
+            function findGamePlayer() {
+                const myGame = findGameForUser(player.user.id);
+                if (myGame.playerA.player.user.id === player.user.id) {
+                    return myGame.playerA;
+                }
+                return myGame.playerB;
+            }
+
+            function findOpponent() {
+                const myGame = findGameForUser(player.user.id);
+                if (myGame.playerA.player.user.id === player.user.id) {
+                    return myGame.playerB;
+                }
+                return myGame.playerA;
+            }
+
+            socket.on("action", checkAuth((data: ClientActionResponse) => {
+                console.log("received action", data);
+                if (actionRequested(data)) {
+                    switch (data.type) {
+                    case "Question":
+                        break;
+                    case "YesNo":
+                        requestAction({
+                            type: "ChoosePerson",
+                            message: "Guess a person",
+                        }, findGamePlayer());
+                        break;
+                    case "ChooseTurnType":
+                        switch (data.response) {
+                        case TurnType.Guess:
+                            requestAction({
+                                type: "ChoosePerson",
+                                message: "Guess a person",
+                            }, findGamePlayer());
+                            break;
+                        case TurnType.Question:
+                            requestAction({
+                                type: "Question",
+                                message: "Ask a yes or no question",
+                            }, findGamePlayer());
+                            break;
+                        }
+                        break;
+                    case "ChoosePerson":
+                        break;
                     }
                 }
             }));

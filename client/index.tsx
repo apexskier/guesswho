@@ -10,7 +10,7 @@ FB.init({
     version: "v2.7",
 });
 
-ReactDOM.render(
-    <App />,
-    document.getElementById("app")
-);
+const root = document.getElementById("app");
+if (root) {
+    ReactDOM.render(<App />, root);
+}

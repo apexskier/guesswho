@@ -18,6 +18,7 @@ function mutualFriends(aFriends: UserInfo[], bFriends: UserInfo[]): UserInfo[] {
 
 export function newGame(playerA: Player, playerB: Player): ServerGame {
     return {
+        id: `id-${Math.random()}`, // TODO: replace with guid
         playerA: {
             player: playerA,
             eliminatedFriends: [] as UserInfo[],
@@ -26,15 +27,29 @@ export function newGame(playerA: Player, playerB: Player): ServerGame {
             player: playerB,
             eliminatedFriends: [] as UserInfo[],
         },
-        whosTurn: playerA.user.id,
         guessableFriends: mutualFriends(guessableFriends(playerA.friends), guessableFriends(playerB.friends)),
+        state: {
+            type: {
+                type: "ChoosePerson",
+                message: "Choose a friend",
+            },
+            player: "both",
+        }
     };
 }
 
-export function clientGameFor(game: ServerGame, player: Player) {
-    const gamePlayer = game.playerA.player.user.id === player.user.id ? game.playerA : game.playerB;
+export function clientGameFor(game: ServerGame, player: Player): ClientGame {
+    let gamePlayer: GamePlayer;
+    let opponent: UserInfo;
+    if (game.playerA.player.user.id === player.user.id) {
+        gamePlayer = game.playerA;
+        opponent = game.playerB.player.user;
+    } else {
+        gamePlayer = game.playerB;
+        opponent = game.playerA.player.user;
+    }
     return {
-        yourTurn: player.user.id === game.whosTurn,
+        opponent: opponent,
         chosenFriend: gamePlayer.chosenFriend,
         eliminatedFriends: gamePlayer.eliminatedFriends,
         guessableFriends: game.guessableFriends,
