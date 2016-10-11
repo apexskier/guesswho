@@ -43,8 +43,22 @@ const fakeFriends: UserInfo[] = range.map((_, i) => ({
     },
 }));
 
-function findGameForUser(userId: string) {
-    return gamesByPlayer[userId];
+function findGameForUser(id: userID) {
+    return gamesByPlayer[id as string];
+}
+
+function pushGameUpdate(game: ServerGame) {
+    Object.keys(game.players).forEach((id) => {
+        const gamePlayer = game.players[id];
+        const clientGame: ClientGame = {
+            opponent: Object.keys(game.players).filter((id_) => id_ !== id).map((id) => game.players[id].player.user)[0],
+            chosenFriend: gamePlayer.chosenFriend,
+            eliminatedFriends: gamePlayer.eliminatedFriends,
+            guessableFriends: game.guessableFriends,
+            status: gamePlayer.status,
+        };
+        connectedPlayers[id].emit("gameUpdate", clientGame);
+    });
 }
 
 export default class WebApi {
@@ -69,11 +83,11 @@ export default class WebApi {
 
     private initializeWebsocket(io: SocketIO.Server) {
         io.on("connection", (socket) => {
-            let player: Player;
+            let player: Player | null = null;
 
             function checkAuth(callback: (data: AuthedMessage) => void): (data: AuthedMessage) => void {
                 return (data: AuthedMessage) => {
-                    if (player && player.token !== data.token) {
+                    if (!player || player.token !== data.token) {
                         socket.emit("error", { message: "Failed auth"});
                     } else {
                         callback(data);
@@ -81,18 +95,16 @@ export default class WebApi {
                 };
             }
 
-            function updateStatus(status: UserStatus) {
-                if (!player) {
-                    console.warn("player disconnected, no updateStatu possible");
-                    return;
-                }
+            function updateStatusForUser(status: UserStatus, user: userID) {
                 Object.keys(connectedPlayers).forEach((id) => {
                     const connectedPlayer = knownPlayers[id];
 
-                    if (connectedPlayer.friendsInApp.some((friend) => friend === player.user.id )) {
+                    console.log(`testing onlinestatus for ${knownPlayers[id].user.name}`);
+                    if (connectedPlayer.friendsInApp.some((friend) => friend === user)) {
                         const data: { [id: string]: UserStatus } = {};
-                        data[player.user.id] = status;
+                        data[user] = status;
                         connectedPlayers[id].emit("onlineStatus", data);
+                        console.log(`emitting onlinestatus to ${knownPlayers[id].user.name}`, data);
                     }
                 });
             }
@@ -110,7 +122,6 @@ export default class WebApi {
                     connectedPlayers[player.user.id].disconnect(true);
                 }
                 connectedPlayers[player.user.id] = socket;
-                updateStatus({ online: true });
                 const statuses: { [id: string]: UserStatus } = {};
                 player.friendsInApp.forEach((friend) => {
                     const friendPlayer = knownPlayers[friend];
@@ -120,11 +131,12 @@ export default class WebApi {
                         } as UserStatus;
                         const game = findGameForUser(friend);
                         if (game) {
-                            status.playing = game.playerA.player.user.id === friend ? game.playerB.player.user : game.playerA.player.user;
+                            status.playing = knownPlayers[friend].user;
                         }
                         statuses[friend] = status;
                     }
                 });
+                updateStatusForUser({ online: true }, player.user.id);
                 socket.emit("onlineStatus", statuses);
                 const game = findGameForUser(player.user.id);
                 if (game) {
@@ -134,122 +146,256 @@ export default class WebApi {
 
             socket.on("start", checkAuth((data: GameStartMessage) => {
                 const withPlayer = knownPlayers[data.with];
-                if (withPlayer) {
+                if (withPlayer && player) {
                     console.log("recieved start", data, withPlayer.user);
                     // TODO: Check that user isn't already in game
                     if (withPlayer) {
                         const game = gameLogic.newGame(player, withPlayer);
+                        shuffle(game.guessableFriends);
                         if (game.guessableFriends.length >= 16) {
-                            game.guessableFriends = shuffle(game.guessableFriends).slice(0, 16);
+                            game.guessableFriends = game.guessableFriends.slice(0, 16);
                         } else {
                             game.guessableFriends = game.guessableFriends.concat(shuffle(fakeFriends).slice(0, 16 - game.guessableFriends.length));
                         }
+
                         activeGames.push(game);
                         gamesByPlayer[withPlayer.user.id] = game;
                         gamesByPlayer[player.user.id] = game;
+                        updateStatusForUser({ online: true, playing: withPlayer.user }, player.user.id);
+                        updateStatusForUser({ online: withPlayer.user.id in connectedPlayers, playing: player.user }, withPlayer.user.id);
 
-                        socket.emit("gameUpdate", gameLogic.gameForA(game));
-                        connectedPlayers[withPlayer.user.id].emit("gameUpdate", gameLogic.gameForB(game));
-                        updateStatus({ online: true, playing: withPlayer.user });
+                        pushGameUpdate(game);
                     }
                 }
             }));
 
-            function actionRequested(action: ClientActionResponse) {
-                const game = findGameForUser(player.user.id);
-                if (game !== undefined) {
-                    const type = action.type;
-                    if (game.state.player === "both" || game.state.player!.player === player) {
-                        if (game.state.type === type) {
-                            return true;
+            function findGamePlayer(): GamePlayer | null {
+                if (player) {
+                    const myGame = findGameForUser(player.user.id);
+                    if (myGame) {
+                        return myGame.players[player.user.id];
+                    }
+                }
+                return null;
+            }
+
+            function findOpponent(): GamePlayer | null {
+                if (player) {
+                    const myGame = findGameForUser(player.user.id);
+                    if (myGame) {
+                        const opponentId = Object.keys(myGame.players).find((id) => id !== player!.user.id as string);
+                        return myGame.players[opponentId];
+                    }
+                }
+                return null;
+            }
+
+            function actionRequested(action: ClientResponse) {
+                if (player) {
+                    const game = findGameForUser(player.user.id);
+                    if (game !== undefined) {
+                        const status = game.players[player.user.id].status;
+                        if (status !== "winner") {
+                            const type = (status as ClientActionRequest).type;
+                            if (type === action.type) {
+                                return true;
+                            }
                         }
                     }
                 }
                 return false;
             }
 
-            function requestAction(action: ClientActionRequest, whoFor: GamePlayer | "both") {
-                const newGameState: GameState = {
-                    type: action,
-                    player: whoFor,
-                };
-                if (whoFor === "both") {
+            function requestAction(action: ClientActionRequest, whoFor: "current" | "opponent") {
+                if (player) {
                     const game = findGameForUser(player.user.id);
-                    findGameForUser(game.playerA.player.user.id).state = newGameState;
-                    findGameForUser(game.playerB.player.user.id).state = newGameState;
-                    connectedPlayers[game.playerA.player.user.id].emit("clientRequest", action);
-                    connectedPlayers[game.playerB.player.user.id].emit("clientRequest", action);
-                } else {
-                    findGameForUser((whoFor as GamePlayer).player!.user.id).state = newGameState;
-                    connectedPlayers[(whoFor as GamePlayer).player!.user.id].emit("clientRequest", action);
+                    if (game) {
+                        const playerId = Object.keys(game.players).find((k) => {
+                            if (whoFor === "current") {
+                                return k === player!.user.id;
+                            } else {
+                                return k !== player!.user.id;
+                            }
+                        });
+                        const gamePlayer = game.players[playerId];
+                        gamePlayer.status = action;
+                        connectedPlayers[playerId].emit("gameUpdate", gameLogic.clientGameFor(game, gamePlayer.player));
+                        console.log(`requested action from ${knownPlayers[playerId].user.name}`, action);
+                    }
                 }
             }
 
-            function findGamePlayer() {
-                const myGame = findGameForUser(player.user.id);
-                if (myGame.playerA.player.user.id === player.user.id) {
-                    return myGame.playerA;
-                }
-                return myGame.playerB;
-            }
-
-            function findOpponent() {
-                const myGame = findGameForUser(player.user.id);
-                if (myGame.playerA.player.user.id === player.user.id) {
-                    return myGame.playerB;
-                }
-                return myGame.playerA;
-            }
-
-            socket.on("action", checkAuth((data: ClientActionResponse) => {
-                console.log("received action", data);
+            socket.on("action", checkAuth((data: ClientResponse) => {
+                const p = player!;
+                console.log(`received action from ${p.user.name}`, data);
                 if (actionRequested(data)) {
                     switch (data.type) {
                     case "Question":
-                        break;
+                        requestAction({
+                            type: "YesNo",
+                            message: data.response,
+                        }, "opponent");
+                        return;
                     case "YesNo":
                         requestAction({
-                            type: "ChoosePerson",
-                            message: "Guess a person",
-                        }, findGamePlayer());
-                        break;
+                            type: "Eliminate",
+                            message: data.response ? "Yes" : "No",
+                        }, "opponent");
+                        return;
                     case "ChooseTurnType":
                         switch (data.response) {
                         case TurnType.Guess:
                             requestAction({
-                                type: "ChoosePerson",
+                                type: "Guess",
                                 message: "Guess a person",
-                            }, findGamePlayer());
-                            break;
+                            }, "current");
+                            return;
                         case TurnType.Question:
                             requestAction({
                                 type: "Question",
                                 message: "Ask a yes or no question",
-                            }, findGamePlayer());
-                            break;
+                            }, "current");
+                            return;
                         }
                         break;
-                    case "ChoosePerson":
+                    case "Guess":
+                        {
+                            const game = findGameForUser(p.user.id);
+                            const opponentsFriend = game.players[Object.keys(game.players).find((k) => k !== p.user.id)].chosenFriend;
+                            console.log("guess", opponentsFriend, data.response);
+                            if (opponentsFriend !== null) {
+                                if (opponentsFriend !== data.response) {
+                                    console.log(game.players[p.user.id].eliminatedFriends);
+                                    game.players[p.user.id].eliminatedFriends.push(data.response);
+                                    console.log(game.players[p.user.id].eliminatedFriends);
+                                    requestAction({
+                                        type: "Wait",
+                                        message: "Nope, they didn't choose them.",
+                                    }, "current");
+                                    requestAction({
+                                        type: "ChooseTurnType",
+                                        message: "What do you want to do?",
+                                    }, "opponent");
+                                } else {
+                                    game.players[p.user.id].status = "winner";
+                                    requestAction({
+                                        type: "Cleanup",
+                                        message: `${p.user.name} won!`,
+                                    }, "current");
+                                    requestAction({
+                                        type: "Cleanup",
+                                        message: `${p.user.name} won!`,
+                                    }, "opponent");
+                                }
+                                return;
+                            } else {
+                                console.warn("impossible state");
+                            }
+                        }
                         break;
+                    case "Eliminate":
+                        {
+                            const game = findGameForUser(p.user.id);
+                            const gamePlayer = game.players[p.user.id];
+                            const eliminatedUsers = (data.response as userID[]) || [];
+                            eliminatedUsers.forEach((id) => {
+                                if (!gamePlayer.eliminatedFriends.some((eid) => id === eid) &&
+                                    game.guessableFriends.some((f) => f.id === id)) {
+                                    gamePlayer.eliminatedFriends.push(id);
+                                }
+                            })
+                            requestAction({
+                                type: "ChooseTurnType",
+                                message: "What do you want to do?",
+                            }, "opponent");
+                            requestAction({
+                                type: "Wait",
+                                message: `Waiting on ${(<GamePlayer>findOpponent()).player.user.name}`,
+                            }, "current");
+                            return;
+                        }
+                    case "ChoosePerson":
+                        {
+                            const game = findGameForUser(p.user.id);
+                            const gamePlayer = game.players[p.user.id];
+                            if (gamePlayer.chosenFriend === null) {
+                                gamePlayer.chosenFriend = game.guessableFriends.find((f) => f.id === data.response).id;
+                                if (Object.keys(game.players).map((k) => game.players[k]).every((p) => p.chosenFriend !== null)) {
+                                    requestAction({
+                                        type: "ChooseTurnType",
+                                        message: "What do you want to do?",
+                                    }, "opponent");
+                                    requestAction({
+                                        type: "Wait",
+                                        message: `Waiting on ${(<GamePlayer>findOpponent()).player.user.name}`,
+                                    }, "current");
+                                    return;
+                                } else {
+                                    // not every user has chosen a friend yet
+                                    requestAction({
+                                        type: "Wait",
+                                        message: `Waiting on ${(<GamePlayer>findOpponent()).player.user.name}`,
+                                    }, "current");
+                                    return;
+                                }
+                            } else {
+                                requestAction({
+                                    type: "Wait",
+                                    message: `??? You can't choose again!`,
+                                }, "current");
+                                return;
+                            }
+                        }
+                    case "Complete":
+                        requestAction({
+                            type: "ChooseTurnType",
+                            message: "What do you want to do?",
+                        }, "opponent");
+                        requestAction({
+                            type: "Wait",
+                            message: `Waiting on ${(<GamePlayer>findOpponent()).player.user.name}`,
+                        }, "current");
+                        return;
+                    case "Cleanup":
+                        const game = findGameForUser(p.user.id);
+                        const idx = activeGames.map((game) => game.id).indexOf(game.id);
+                        activeGames.splice(idx, 0);
+                        Object.keys(game.players).forEach((id) => {
+                            delete gamesByPlayer[id];
+                            connectedPlayers[id].emit("gameUpdate", null);
+                            console.log(`ended game for ${knownPlayers[id].user.name}`);
+                            updateStatusForUser({ online: true }, id);
+                        });
                     }
+                }
+                const game = findGameForUser(p.user.id);
+                if (game) {
+                    connectedPlayers[p.user.id].emit("gameUpdate", gameLogic.clientGameFor(game, p));
+                    console.log(`resent action to ${p.user.name}`);
                 }
             }));
 
             function logout() {
-                updateStatus({ online: false });
                 if (player) {
+                    console.log(player);
+                    updateStatusForUser({ online: false }, player.user.id);
                     delete connectedPlayers[player.user.id];
+                    player = null;
                 }
             }
 
             socket.on("disconnect", () => {
-                console.log("disconnect", player ? player.user : undefined);
+                console.log("disconnect", player);
                 logout();
             });
 
             socket.on("logout", () => {
-                console.log("logout", player ? player.user : undefined);
+                console.log("logout", player);
                 logout();
+            });
+
+            socket.on("error", (err: any) => {
+                console.error(err);
             });
         });
     }

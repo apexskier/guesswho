@@ -1,6 +1,8 @@
+declare type userID = string;
+
 declare interface UserInfo {
     name: string;
-    id: string;
+    id: userID;
     picture?: {
         data: {
             is_silhouette: boolean;

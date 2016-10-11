@@ -3,7 +3,7 @@
         "sourceMap": true,
         "noImplicitAny": true,
         "module": "commonjs",
-        "target": "es5",
+        "target": "es6",
         "experimentalDecorators": true,
         "strictNullChecks": true,
         "moduleResolution": "node"
@@ -16,6 +16,7 @@
         "./**/*.ts",
         "./**/*.tsx"
     ],
+    "compileOnSave": true,
     "include": [
         "../typings/**/*",
         "../common/**/*",

@@ -17,51 +17,43 @@ function mutualFriends(aFriends: UserInfo[], bFriends: UserInfo[]): UserInfo[] {
 }
 
 export function newGame(playerA: Player, playerB: Player): ServerGame {
-    return {
+    const game = {
         id: `id-${Math.random()}`, // TODO: replace with guid
-        playerA: {
-            player: playerA,
-            eliminatedFriends: [] as UserInfo[],
-        },
-        playerB: {
-            player: playerB,
-            eliminatedFriends: [] as UserInfo[],
-        },
+        players: {} as { [id: string]: GamePlayer },
         guessableFriends: mutualFriends(guessableFriends(playerA.friends), guessableFriends(playerB.friends)),
-        state: {
-            type: {
-                type: "ChoosePerson",
-                message: "Choose a friend",
-            },
-            player: "both",
-        }
     };
+    game.players[playerA.user.id] = {
+        player: playerA,
+        eliminatedFriends: [] as userID[],
+        chosenFriend: null,
+        status: {
+            type: "ChoosePerson",
+            message: "Choose a friend",
+        },
+    };
+    game.players[playerB.user.id as string] = {
+        player: playerB,
+        eliminatedFriends: [] as userID[],
+        chosenFriend: null,
+        status: {
+            type: "ChoosePerson",
+            message: "Choose a friend",
+        },
+    };
+    return game;
 }
 
 export function clientGameFor(game: ServerGame, player: Player): ClientGame {
-    let gamePlayer: GamePlayer;
-    let opponent: UserInfo;
-    if (game.playerA.player.user.id === player.user.id) {
-        gamePlayer = game.playerA;
-        opponent = game.playerB.player.user;
-    } else {
-        gamePlayer = game.playerB;
-        opponent = game.playerA.player.user;
-    }
+    const gamePlayer = game.players[player.user.id];
+    const opponentId = Object.keys(game.players).find((id) => id !== player.user.id as string);
+    const opponent = game.players[opponentId];
     return {
-        opponent: opponent,
+        opponent: opponent.player.user,
         chosenFriend: gamePlayer.chosenFriend,
         eliminatedFriends: gamePlayer.eliminatedFriends,
         guessableFriends: game.guessableFriends,
+        status: gamePlayer.status,
     };
-}
-
-export function gameForA(game: ServerGame): ClientGame {
-    return clientGameFor(game, game.playerA.player);
-}
-
-export function gameForB(game: ServerGame): ClientGame {
-    return clientGameFor(game, game.playerB.player);
 }
 
 

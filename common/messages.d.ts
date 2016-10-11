@@ -5,51 +5,68 @@ declare interface AuthedMessage {
 declare interface InitializationMessage extends AuthedMessage {
     me: UserInfo;
     friends: UserInfo[];
-    /**
-     * Set of User IDs
-     */
-    friendsInApp: string[];
+    friendsInApp: userID[];
 }
 
 declare interface GameStartMessage extends AuthedMessage {
-    /**
-     * User ID
-     */
-    with: string;
+    with: userID;
 }
 
 declare interface ErrorMessage {
     message: string;
 }
 
-declare type ClientAction = "ChoosePerson" | "Question" | "YesNo" | "ChooseTurnType"
-
-declare interface ClientChoosePersonResponse extends AuthedMessage {
-    type: "ChoosePerson";
-    /**
-     * User ID
-     */
-    response: string;
-}
-
-declare interface ClientQuestionResponse extends AuthedMessage {
-    type: "Question";
-    response: string;
-}
-
-declare interface ClientYesNoResponse extends AuthedMessage {
-    type: "YesNo";
-    response: boolean;
-}
-
-declare interface ClientChooseTurnTypeResponse extends AuthedMessage {
-    type: "ChooseTurnType";
-    response: TurnType;
-}
+declare type ClientAction =
+    "ChoosePerson" |
+    "Question" |
+    "Guess" |
+    "YesNo" |
+    "ChooseTurnType" |
+    "Complete" |
+    "Wait" |
+    "Eliminate" |
+    "Cleanup";
 
 declare interface ClientActionRequest {
     type: ClientAction;
     message?: string;
 }
 
-declare type ClientActionResponse = ClientChoosePersonResponse | ClientQuestionResponse | ClientYesNoResponse | ClientChooseTurnTypeResponse;
+interface ClientResponse extends AuthedMessage {
+    type: ClientAction;
+    response: any;
+}
+
+declare interface ClientChoosePersonResponse extends ClientResponse {
+    type: "ChoosePerson" | "Guess";
+    response: userID;
+}
+
+declare interface ClientQuestionResponse extends ClientResponse {
+    type: "Question";
+    response: string;
+}
+
+declare interface ClientYesNoResponse extends ClientResponse {
+    type: "YesNo";
+    response: boolean;
+}
+
+declare interface ClientChooseTurnTypeResponse extends ClientResponse {
+    type: "ChooseTurnType";
+    response: TurnType;
+}
+
+declare interface ClientCompleteResponse extends ClientResponse {
+    type: "Complete";
+    response: string;
+}
+
+declare interface ClientEliminateResponse extends ClientResponse {
+    type: "Eliminate";
+    response: userID[];
+}
+
+declare interface ClientCleanupResponse extends ClientResponse {
+    type: "Cleanup";
+}

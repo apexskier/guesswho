@@ -6,14 +6,15 @@ declare interface UserStatus {
 declare interface Player {
     user: UserInfo;
     friends: UserInfo[];
-    friendsInApp: string[];
+    friendsInApp: userID[];
     token: string;
 }
 
 declare interface GamePlayer {
     player: Player;
-    chosenFriend?: UserInfo;
-    eliminatedFriends: UserInfo[];
+    chosenFriend: userID | null;
+    eliminatedFriends: userID[];
+    status: ClientActionRequest | "winner";
 }
 
 declare interface GameState {
@@ -23,17 +24,16 @@ declare interface GameState {
 
 declare interface ServerGame {
     id: string;
-    playerA: GamePlayer;
-    playerB: GamePlayer;
+    players: { [id: string]: GamePlayer }; // string is userID
     guessableFriends: UserInfo[];
-    state: GameState;
 }
 
 declare interface ClientGame {
     opponent: UserInfo;
-    chosenFriend?: UserInfo;
-    eliminatedFriends: UserInfo[];
+    chosenFriend: userID | null;
+    eliminatedFriends: userID[];
     guessableFriends: UserInfo[];
+    status: ClientActionRequest | "winner";
 }
 
 declare const enum TurnType {

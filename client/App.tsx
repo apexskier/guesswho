@@ -3,16 +3,21 @@ import * as FB from "FB";
 import * as io from "socket.io-client";
 import autobind = require("autobind-decorator");
 
+import "./base.css";
+
 import Login from "./components/Login";
 import Logout from "./components/Logout";
 import Landing from "./components/Landing";
 import Game from "./components/Game";
+
+(window as any).React = React;
 
 
 interface AppProps {}
 
 interface AppState {
     loading?: boolean;
+    gettingFriends?: boolean;
     user?: UserInfo;
     friendsInApp?: UserInfo[];
     friends?: UserInfo[];
@@ -48,7 +53,6 @@ export default class App extends React.Component<AppProps, AppState> {
 
         this.socket.on("gameUpdate", (data: ClientGame) => {
             this.setState({ activeGame: data });
-            console.log(data);
         });
     }
 
@@ -68,7 +72,7 @@ export default class App extends React.Component<AppProps, AppState> {
 
     handleFBError(error: FBError) {
         if (error.type === "OAuthException" && error.code === 463 || error.code === 467) {
-            this.setState({ user: undefined });
+            this.handleLoggedOut();
         }
         console.error(error);
     }
@@ -84,6 +88,26 @@ export default class App extends React.Component<AppProps, AppState> {
     }
 
     @autobind
+    collectFriends(response: any) {
+        if (response.error) this.handleFBError(response.error);
+        console.log(response);
+        this.setState({
+            friends: (this.state.friends || []).concat(response.data as UserInfo[])
+        });
+        if (response.paging.next) {
+            fetch(response.paging.next, {
+                method: "get",
+            })
+            .then((response: any) => response.json())
+            .then(this.collectFriends);
+        } else {
+            this.initServerConnection();
+            this.setState({ gettingFriends: false });
+            this.socket.on("connect", this.initServerConnection);
+        }
+    }
+
+    @autobind
     handleAuth(response: AuthResponse) {
         this.setState({ token: response.accessToken });
         FB.api("/me", (response) => {
@@ -93,15 +117,10 @@ export default class App extends React.Component<AppProps, AppState> {
             FB.api(`${this.state.user!.id}/friends`, (response) => {
                 if (response.error) this.handleFBError(response.error);
                 this.setState({ friendsInApp: response.data as UserInfo[] });
-
-                FB.api(`/${this.state.user!.id}/taggable_friends`, (response) => {
-                    if (response.error) this.handleFBError(response.error);
-                    this.setState({
-                        friends: response.data as UserInfo[]
-                    });
-                    this.initServerConnection();
-                    this.socket.on("connect", this.initServerConnection);
-                });
+                this.setState({ gettingFriends: true });
+                FB.api(`/${this.state.user!.id}/taggable_friends`, {
+                    fields: "name,picture.width(400).height(400)",
+                }, this.collectFriends);
             });
         });
     }
@@ -110,18 +129,22 @@ export default class App extends React.Component<AppProps, AppState> {
     handleLoggedOut() {
         this.setState({
             user: undefined,
+            token: undefined,
         });
         this.socket.emit("logout");
     }
 
     @autobind
     setUpWith(friend: UserInfo) {
-        return () => {
-            this.socket.emit("start", {
-                token: this.state.token,
-                with: friend.id,
-            } /* as GameStartMessage */);
-        };
+        if (!this.state.gettingFriends) {
+            return () => {
+                this.socket.emit("start", {
+                    token: this.state.token,
+                    with: friend.id,
+                } as GameStartMessage);
+            };
+        }
+        return () => {};
     }
 
     render() {
@@ -131,7 +154,8 @@ export default class App extends React.Component<AppProps, AppState> {
                     <div>
                         <Logout onLoggedOut={this.handleLoggedOut} />
                         <h1>Guess Who‽</h1>
-                        {this.state.user ? <p>Logged in as: {this.state.user.name}</p> : null}
+                        {this.state.user && <p>Logged in as: {this.state.user.name}</p>}
+                        {this.state.gettingFriends && <p>Finding your friends...</p>}
                         {this.state.activeGame
                             ? (
                                 <Game
@@ -148,24 +172,6 @@ export default class App extends React.Component<AppProps, AppState> {
                                             friendsOnline={this.state.onlineStatus!}
                                             setUpGame={this.setUpWith}
                                         />
-                                    ) : null}
-                                    {this.state.friends ? (
-                                        <div>
-                                            <h3>All friends</h3>
-                                            {this.state.friends.length === 0
-                                                ? <p>You have no friends?! 😱</p>
-                                                : (
-                                                    <ul>
-                                                        {this.state.friends.map((friend) => (
-                                                            <li key={friend.id}>
-                                                                {friend.picture ?
-                                                                    <img src={friend.picture.data.url} alt={friend.name} /> :
-                                                                    <p>{friend.name}</p>}
-                                                            </li>
-                                                        ))}
-                                                    </ul>
-                                                )}
-                                        </div>
                                     ) : null}
                                 </div>
                             )}

@@ -1,0 +1,65 @@
+@import "../../variables.css";
+
+.game-board {
+    margin: 0;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 100%;
+    padding: var(--game-tile-border);
+    perspective: 1000px;
+    background-color: #ccc;
+}
+
+.game-tile {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    width: 25%;
+    padding: var(--game-tile-border);
+
+    & .game-tile-contents {
+        border: 4px solid;
+        /* border-radius: 2vw; */
+        position: relative;
+        transition:
+            transform 150ms ease-in-out,
+            filter 150ms ease-in-out;
+        overflow: hidden;
+        text-align: center;
+
+        &:hover,
+        &:focus {
+            transform: translateZ(10px) scale(1.02);
+            transform-origin: center;
+        }
+
+        & img {
+            display: block;
+            width: 100%;
+        }
+
+        & .game-tile-text {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 4px 8px;
+            color: #fff;
+            background-color: rgba(50, 50, 50, 0.4);
+            text-align: left;
+            font-size: 15px;
+        }
+    }
+
+    &.game-tile-chosen .game-tile-contents {
+        filter: saturate(1.3);
+        border-color: yellow;
+    }
+
+    &.game-tile-eliminated .game-tile-contents {
+        filter: grayscale(.8) brightness(62%) blur(2px);
+        transform: rotateX(180deg) scale(0.98);
+    }
+}

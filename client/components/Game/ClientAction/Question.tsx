@@ -8,7 +8,7 @@ export default class Question extends ClientActionComponent {
     private questionEl: any;
 
     @autobind
-    private sendQuestion() {
+    private sendQuestion(ev: React.FormEvent) {
         const question = this.questionEl.value || "";
         if (question.length > 0) {
             this.sendResponse({
@@ -17,11 +17,12 @@ export default class Question extends ClientActionComponent {
                 response: question,
             });
         }
+        ev.preventDefault();
     }
 
     render() {
         return (
-            <div>
+            <form action="/" onSubmit={this.sendQuestion}>
                 {this.props.message ? <p>{this.props.message}</p> : null}
                 <textarea
                     ref={(el) => {
@@ -30,9 +31,9 @@ export default class Question extends ClientActionComponent {
                     placeholder="Ask a question"
                 ></textarea>
                 <p>
-                    <button onClick={this.sendQuestion}>Send</button>
+                    <button type="submit">Send</button>
                 </p>
-            </div>
+            </form>
         );
     }
 }

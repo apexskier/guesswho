@@ -28,8 +28,7 @@ module.exports = {
     },
 
     resolve: {
-        // Add '.ts' and '.tsx' as resolvable extensions.
-        extensions: ['', '.webpack.js', '.web.js', '.ts', '.tsx', '.js'],
+        extensions: ['', '.webpack.js', '.web.js', '.ts', '.tsx', '.js', '.css'],
     },
 
     externals: {
@@ -41,17 +40,29 @@ module.exports = {
             // All output '.js' files will have any sourcemaps re-processed by 'source-map-loader'.
             {
                 test: /\.js$/,
-                loader: 'source-map-loader',
+                loader: 'source-map',
             },
         ],
         loaders: [
-            // All files with a '.ts' or '.tsx' extension will be handled by 'ts-loader'.
             {
                 test: /\.tsx?$/,
-                loader: 'ts-loader',
+                loader: 'ts',
             },
+            {
+                test: /\.css$/,
+                loaders: [
+                    'style',
+                    'css?sourceMap&-minimize&importLoaders=1',
+                    'postcss',
+                ]
+            }
         ],
     },
 
-    plugins: [],
+    postcss: () => {
+        return [
+            require('postcss-import'),
+            require('postcss-cssnext'),
+        ];
+    }
 };
