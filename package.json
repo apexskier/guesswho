@@ -9,7 +9,10 @@
     "dev:client": "webpack -w",
     "build:client": "webpack",
     "build:server": "tsc --pretty -p server/tsconfig.json",
-    "start": "node --harmony server/index.js"
+    "start": "node --harmony server/index.js",
+    "clean": "git clean -fdX --exclude='!node_modules/' --exclude='!typings/'",
+    "wipe": "git clean -fdX",
+    "install": "yarn && typings install"
   },
   "author": "Cameron Little <cameron@camlittle.com>",
   "license": "MIT",
