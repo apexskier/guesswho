@@ -19,10 +19,9 @@ export default class ChooseTurn extends ClientActionComponent {
     render() {
         return (
             <div>
-                {this.props.message ? <p>{this.props.message}</p> : null}
-                <p>
+                {this.props.message ? <p className="message">{this.props.message}</p> : null}
+                <p className="button-row">
                     <button onClick={this.chooseType(TurnType.Question)}>Question?</button>
-                    {" or "}
                     <button onClick={this.chooseType(TurnType.Guess)}>Guess?</button>
                 </p>
             </div>

@@ -51,7 +51,7 @@ export default class Game extends React.Component<GameProps, GameState> {
                         response: friend.id,
                     } as ClientChoosePersonResponse);
                     this.actionComplete();
-                } else if (actionRequest.type === "Eliminate" && friend.id !== this.props.game.chosenFriend) {
+                } else if (actionRequest.type === "Eliminate") {
                     let elims: userID[];
                     if (this.state.pendingEliminations) {
                         elims = (this.state.pendingEliminations as userID[]).slice(0);
@@ -95,25 +95,49 @@ export default class Game extends React.Component<GameProps, GameState> {
         this.actionComplete();
     }
 
+    @autobind
+    private onScrubStart(ev: React.MouseEvent) {
+        const el = (ev.currentTarget as HTMLElement);
+        el.classList.add("active");
+    }
+
+    @autobind
+    private onScrubEnd(ev: React.MouseEvent) {
+        const el = (ev.currentTarget as HTMLElement);
+        el.classList.remove("active");
+        el.style.transform = null;
+    }
+
+    @autobind
+    private onScrubMove(ev: React.MouseEvent) {
+        const el = (ev.currentTarget as HTMLElement);
+        const rect = el.getBoundingClientRect();
+        const xDeg = (((ev.clientY - rect.top) / rect.height) - .5) * 20;
+        const yDeg = (((ev.clientX - rect.left) / rect.width) - .5) * 20;
+        el.style.transform = `translateZ(10px) rotateY(${-yDeg}deg) rotateX(${xDeg}deg)`;
+    }
+
     render() {
         let actionUI: JSX.Element | null = null;
         if (this.props.game.status !== "winner") {
             const action = this.props.game.status as ClientActionRequest;
             switch (action.type) {
             case "Wait":
-                actionUI = <p>{action.message ? action.message : "Please wait."}</p>;
+                actionUI = <p className="message">{action.message ? action.message : "Please wait."}</p>;
                 break;
             case "ChoosePerson":
-                actionUI = <p>{action.message ? action.message : "Choose a friend."}</p>;
+                actionUI = <p className="message">{action.message ? action.message : "Choose a friend."}</p>;
                 break;
             case "Guess":
-                actionUI = <p>{action.message ? action.message : "Guess a friend."}</p>;
+                actionUI = <p className="message">{action.message ? action.message : "Guess a friend."}</p>;
                 break;
             case "Cleanup":
                 actionUI = (
                     <div>
-                        <p>{action.message}</p>
-                        <button onClick={this.complete}>Cleanup</button>
+                        {action.message && <p className="message">{action.message}</p>}
+                        <p className="button-row">
+                            <button onClick={this.complete}>Cleanup</button>
+                        </p>
                     </div>
                 );
                 break;
@@ -160,8 +184,10 @@ export default class Game extends React.Component<GameProps, GameState> {
             case "Eliminate":
                 actionUI = (
                     <div>
-                        <p>{action.message ? action.message : "Eliminate friends."}</p>
-                        <button onClick={this.eliminate}>Submit</button>
+                        <p className="message">{action.message ? action.message : "Eliminate friends."}</p>
+                        <p className="button-row">
+                            <button onClick={this.eliminate}>Done</button>
+                        </p>
                     </div>
                 );
                 break;
@@ -175,25 +201,34 @@ export default class Game extends React.Component<GameProps, GameState> {
                 <div className="game-board">
                     {this.props.game.guessableFriends.map((friend) => {
                         let classes = "game-tile";
+                        let eliminated = false;
                         if (this.props.game.chosenFriend !== null && friend.id === this.props.game.chosenFriend) {
                             classes += " game-tile-chosen";
                         }
                         if (this.state.pendingEliminations && (this.state.pendingEliminations as userID[]).some((id) => friend.id === id)) {
-                            classes += " game-tile-eliminated";
+                            classes += " game-tile-pending-elimination";
                         }
                         if (this.props.game.eliminatedFriends.some((id) => friend.id === id)) {
                             classes += " game-tile-eliminated";
+                            eliminated = true;
                         }
                         return (
                             <div
                                 className={classes}
                                 key={friend.id}
                                 onClick={this.onFriendClick(friend)}
+                                onMouseMove={this.onScrubMove}
+                                onMouseOver={this.onScrubStart}
+                                onMouseOut={this.onScrubEnd}
+                                // onTouchMove={this.onScrubMove}
+                                // onTouchStart={this.onScrubStart}
+                                // onTouchEnd={this.onScrubEnd}
+                                tabIndex={eliminated ? -1 : 0}
                             >
                                 <div className="game-tile-contents">
-                                    {friend.picture && <img src={friend.picture.data.url} alt={friend.name} />}
-                                    <div className="game-tile-text">{friend.name}</div>
+                                    {friend.picture && <img src={friend.picture.data.url} alt={`${friend.name} picture`} />}
                                 </div>
+                                <div className="game-tile-text">{friend.name}</div>
                             </div>
                         );
                     })}

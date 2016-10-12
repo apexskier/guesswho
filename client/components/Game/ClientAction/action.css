@@ -1,22 +1,71 @@
 @import "../../../variables.css";
 
-.action button {
-  appearance: none;
-  font-size: inherit;
-  background-color: var(--primary-color);
-  background-image:
-    linear-gradient(
-      to bottom,
-      color(var(--primary-color) tint(5%)) 10%,
-      color(var(--primary-color) shade(5%)) 80%
-    );
-  border-radius: 3px;
-  padding: 10px 16px;
-  border: 1px solid color(var(--primary-color) shade(10%));
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
-  transition: box-shadow 100ms ease-in-out;
+.action {
+  & .message {
+    text-align: center;
+    font-weight: 500;
+  }
 
-  &:hover {
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  & .button-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  & textarea {
+    width: 100%;
+    border-radius: 3px;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    padding: 8px 10px;
+    font-size: inherit;
+    resize: vertical;
+  }
+
+  & button {
+    appearance: none;
+    font-size: inherit;
+    background-color: var(--primary-color);
+    background-image:
+      linear-gradient(
+        to bottom,
+        color(var(--primary-color) tint(5%)) 10%,
+        color(var(--primary-color) shade(5%)) 80%
+      );
+    border-radius: 3px;
+    padding: 10px 16px;
+    margin-left: var(--game-tile-border);
+    margin-right: var(--game-tile-border);
+    width: 100%;
+    border: 1px solid color(var(--primary-color) shade(10%));
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+
+    &:first-child {
+      margin-left: 0;
+    }
+
+    &:last-child {
+      margin-right: 0;
+    }
+
+    &:focus,
+    &:hover {
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      background-image:
+        linear-gradient(
+          to bottom,
+          color(var(--primary-color) tint(3%)) 10%,
+          color(var(--primary-color) shade(5%)) 80%
+        );
+    }
+
+    &:active {
+      box-shadow: 0 0 1px rgba(0, 0, 0, 0.1);
+      background-image:
+        linear-gradient(
+          to bottom,
+          color(var(--primary-color) shade(3%)) 10%,
+          color(var(--primary-color) tint(3%)) 80%
+        );
+    }
   }
 }

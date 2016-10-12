@@ -1,4 +1,6 @@
+const ExtractTextPlugin = require("extract-text-webpack-plugin");
 const isDebug = process.env.NODE_ENV !== 'production';
+
 
 const stats = {
     colors: true,
@@ -50,12 +52,11 @@ module.exports = {
             },
             {
                 test: /\.css$/,
-                loaders: [
-                    'style',
+                loader: ExtractTextPlugin.extract('style', [
                     'css?sourceMap&-minimize&importLoaders=1',
                     'postcss',
-                ]
-            }
+                ]),
+            },
         ],
     },
 
@@ -66,5 +67,9 @@ module.exports = {
             require('postcss-cssnext'),
             require('postcss-reporter')({ clearMessages: true }),
         ];
-    }
+    },
+
+    plugins: [
+        new ExtractTextPlugin('./dist/styles.css'),
+    ],
 };

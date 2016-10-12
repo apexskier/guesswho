@@ -2,7 +2,7 @@ node_modules/
 .DS_Store
 dist/
 client/**/*.js
-client/**/*.js.map
+client/**/*.map
 server/**/*.js
-server/**/*.js.map
+server/**/*.map
 typings

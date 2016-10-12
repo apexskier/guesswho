@@ -90,7 +90,6 @@ export default class App extends React.Component<AppProps, AppState> {
     @autobind
     collectFriends(response: any) {
         if (response.error) this.handleFBError(response.error);
-        console.log(response);
         this.setState({
             friends: (this.state.friends || []).concat(response.data as UserInfo[])
         });
@@ -152,9 +151,11 @@ export default class App extends React.Component<AppProps, AppState> {
             if (this.state.user) {
                 return (
                     <div>
-                        <Logout onLoggedOut={this.handleLoggedOut} />
+                        <div className="user-controls">
+                            <Logout onLoggedOut={this.handleLoggedOut} />
+                            {this.state.user && <p>{this.state.user.name}</p>}
+                        </div>
                         <h1>Guess Who‽</h1>
-                        {this.state.user && <p>Logged in as: {this.state.user.name}</p>}
                         {this.state.gettingFriends && <p>Finding your friends...</p>}
                         {this.state.activeGame
                             ? (

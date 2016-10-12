@@ -23,14 +23,14 @@ export default class Question extends ClientActionComponent {
     render() {
         return (
             <form action="/" onSubmit={this.sendQuestion}>
-                {this.props.message ? <p>{this.props.message}</p> : null}
+                {this.props.message ? <p className="message">{this.props.message}</p> : null}
                 <textarea
                     ref={(el) => {
                         this.questionEl = el;
                     }}
                     placeholder="Ask a question"
                 ></textarea>
-                <p>
+                <p className="button-row">
                     <button type="submit">Send</button>
                 </p>
             </form>

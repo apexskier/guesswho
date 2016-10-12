@@ -239,7 +239,7 @@ export default class WebApi {
                     case "YesNo":
                         requestAction({
                             type: "Eliminate",
-                            message: data.response ? "Yes" : "No",
+                            message: `${p.user.name} said ${data.response ? "Yes" : "No"}`,
                         }, "opponent");
                         return;
                     case "ChooseTurnType":
