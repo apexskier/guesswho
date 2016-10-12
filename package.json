@@ -24,8 +24,11 @@
     "postcss-cssnext": "^2.8.0",
     "postcss-import": "^8.1.2",
     "postcss-loader": "^0.13.0",
+    "postcss-reporter": "^1.4.1",
     "source-map-loader": "^0.1.5",
     "style-loader": "^0.13.1",
+    "stylelint": "^7.4.2",
+    "stylelint-config-standard": "^13.0.2",
     "ts-loader": "^0.8.2",
     "webpack": "^1.13.2",
     "webpack-dev-server": "^1.16.1"
