@@ -1,6 +1,8 @@
 import * as React from "react";
 import * as FB from "FB";
 
+import "./Landing.css";
+
 import FriendStatus from "./FriendStatus";
 
 
@@ -12,11 +14,11 @@ interface LandingProps {
 
 export default function Landing(props: LandingProps) {
     return (
-        <div>
+        <div className="landing">
             <h3>Friends to play with</h3>
             {props.friends.length === 0
                 ? <p>You have no friends using this app 😢. Invite some!</p>
-                : <ul>{props.friends.map((friend) => (
+                : <ul className="friends">{props.friends.map((friend) => (
                     <FriendStatus
                         key={friend.id}
                         friend={friend}

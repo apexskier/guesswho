@@ -1,6 +1,9 @@
 import * as React from "react";
 import * as FB from "FB";
 
+import "./Login.css";
+
+
 interface LoginProps {
     onLoggedIn: (response: any) => void;
 }
@@ -14,5 +17,10 @@ export default function Login(props: LoginProps) {
         }, {scope: "public_profile,user_friends,email"});
     }
 
-    return <button onClick={logIn}>Log In</button>;
+    return (
+        <div className="login-screen">
+            <h1>Guess Who‽</h1>
+            <button onClick={logIn}>Log in with Facebook</button>
+        </div>
+    );
 }

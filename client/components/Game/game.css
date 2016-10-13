@@ -1,136 +1,17 @@
 @import "../../variables.css";
 
-.game-board {
-  margin: 0;
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  max-width: 100%;
-  perspective: 1000px;
-}
-
-.game-tile {
-  margin: 0;
-  list-style: none;
-  padding: var(--game-tile-border);
-  position: relative;
-  transform-style: preserve-3d;
-  perspective: inherit;
-  transform: translate3d(0, 0, 0) rotateX(0) rotateY(0);
-  transform-origin: center;
-  transition: transform 150ms ease-in-out;
-  width: 25%;
-
-  &:hover,
-  &:focus {
-    transform: translateZ(10px);
-
-    & .game-tile-text {
-      transform: translateZ(15px);
-    }
+.game {
+  & .game-board {
+    margin: 0;
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 100%;
+    perspective: 1000px;
   }
 
-  &.active {
-    transition: none;
-  }
-
-  & .game-tile-contents {
-    transition:
-      filter 150ms ease-in-out,
-      transform 150ms ease-in-out,
-      opacity 150ms ease-in-out;
-    overflow: hidden;
-    text-align: center;
-    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
-    border-radius: 3px;
-
-    &::after {
-      content: "";
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      border-radius: 3px;
-      box-shadow: inset 0 1px 1px 1px rgba(255, 255, 255, 0.2);
-    }
-
-    & img {
-      display: block;
-      width: 100%;
-    }
-  }
-
-  & .game-tile-text {
-    transition: transform 150ms ease-in-out;
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    padding: 4px 8px;
-    color: #fff;
-    background-color: rgba(50, 50, 50, 0.4);
-    text-align: center;
-    font-size: 15px;
-    transform: translateZ(10px);
-    border-radius: 3px;
-    margin: -20px 3px 0;
-  }
-
-  &.game-tile-chosen {
-    & .game-tile-contents {
-      filter: saturate(1.3);
-    }
-
-    & .game-tile-text {
-      font-weight: 500;
-      color: #222;
-      background-color: color(var(--primary-color) a(0.8));
-    }
-  }
-
-  &.game-tile-eliminated {
-    & .game-tile-contents {
-      filter: grayscale(1) brightness(80%);
-      transform: rotateX(180deg) translateZ(0);
-      opacity: 0.5;
-    }
-
-    & .game-tile-text {
-      transform: translateZ(2px);
-    }
-
-    &:hover,
-    &:focus {
-      & .game-tile-text {
-        transform: translateZ(5px);
-      }
-    }
-  }
-
-  &.game-tile-pending-elimination {
-    & .game-tile-contents {
-      filter: grayscale(1) brightness(80%);
-      transform: rotateX(180deg);
-    }
-  }
-}
-
-@media (max-width: 400px) {
-  .game-tile {
-    width: 33.3333%;
-  }
-}
-
-@media (min-width: 600px) {
-  .game-tile {
-    width: 20%;
-  }
-}
-
-@media (min-width: 800px) {
-  .game-tile {
-    width: 16.6666666667%;
+  & img.opponent {
+    height: 1em;
   }
 }

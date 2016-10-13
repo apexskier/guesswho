@@ -1,4 +1,55 @@
 :root {
   --game-tile-border: 6px;
   --primary-color: #64ec89;
+
+  --button: {
+    appearance: none;
+    font-size: inherit;
+    border-radius: 3px;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+    background-color: #fff;
+    border: 1px solid #ddd;
+
+    &:focus,
+    &:hover {
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    &:active {
+      box-shadow: 0 0 1px rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  --button-primary: {
+    padding: 10px 16px;
+    background-color: var(--primary-color);
+    background-image:
+      linear-gradient(
+        to bottom,
+        color(var(--primary-color) tint(5%)) 10%,
+        color(var(--primary-color) shade(5%)) 80%
+      );
+    border: 1px solid color(var(--primary-color) shade(10%));
+    color: #fff;
+    text-shadow: 0 -1px 1px rgba(0, 0, 0, 0.1);
+
+    &:focus,
+    &:hover {
+      background-image:
+        linear-gradient(
+          to bottom,
+          color(var(--primary-color) tint(3%)) 10%,
+          color(var(--primary-color) shade(5%)) 80%
+        );
+    }
+
+    &:active {
+      background-image:
+        linear-gradient(
+          to bottom,
+          color(var(--primary-color) shade(3%)) 10%,
+          color(var(--primary-color) tint(3%)) 80%
+        );
+    }
+  }
 }

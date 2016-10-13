@@ -1,24 +1,45 @@
 import * as React from "react";
 
+import "./FriendStatus.css";
+
+
 interface FriendStatusProps {
     friend: UserInfo;
     status?: UserStatus;
     onClick: (event: React.MouseEvent) => void;
 }
 
-export default function Login(props: FriendStatusProps): JSX.Element {
+export default function FriendStatus(props: FriendStatusProps): JSX.Element {
     const friend = props.friend;
     const status = props.status;
+    let classes = "friend-status";
+    if (status) {
+        if (status.online) {
+            classes += " friend-status-online";
+        }
+        if (status.playing) {
+            classes += " friend-status-in-game";
+        }
+    }
     return (
-        <div onClick={props.onClick}>
+        <li className={classes} onClick={props.onClick}>
+            {friend.picture !== undefined &&
+                // !friend.picture.data.is_silhouette &&
+                <span><img className="picture" src={friend.picture.data.url} />&nbsp;</span>}
             {status
                 ? (
-                    <div>
-                        {friend.name}&nbsp;
-                        {status.online ? <i>(online)</i> : null}
-                        {status.playing ? <i>(in game with {status.playing.name})</i> : null}
-                    </div>
-                ) : <div>{friend.name}</div>}
-        </div>
+                    <span>
+                        {friend.name}
+                        {status.playing && (
+                            <span>
+                                &nbsp;
+                                <small>vs</small>
+                                &nbsp;
+                                {(status.playing.picture) ? <img className="opponent" src={status.playing.picture.data.url} alt={status.playing.name} /> : status.playing.name}
+                            </span>
+                        )}
+                    </span>
+                ) : friend.name}
+        </li>
     );
 }

@@ -1,0 +1,16 @@
+@import "../variables.css";
+
+.login-screen {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  & button {
+    @apply --button;
+    @apply --button-primary;
+
+    width: 100%;
+  }
+}

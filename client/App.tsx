@@ -23,7 +23,7 @@ interface AppState {
     friends?: UserInfo[];
     token?: string;
     onlineStatus?: { [player: string]: UserStatus };
-    activeGame?: ClientGame;
+    activeGame?: ClientGame | null;
 }
 
 export default class App extends React.Component<AppProps, AppState> {
@@ -54,12 +54,17 @@ export default class App extends React.Component<AppProps, AppState> {
         this.socket.on("gameUpdate", (data: ClientGame) => {
             this.setState({ activeGame: data });
         });
+
+        this.socket.on("disconnect", () => {
+            this.setState({ activeGame: null });
+        });
     }
 
     componentWillUnmount() {
         this.socket.off("onlineStatus");
         this.socket.off("gameUpdate");
         this.socket.off("connect");
+        this.socket.off("disconnect");
     }
 
     checkLogin() {
@@ -109,17 +114,19 @@ export default class App extends React.Component<AppProps, AppState> {
     @autobind
     handleAuth(response: AuthResponse) {
         this.setState({ token: response.accessToken });
-        FB.api("/me", (response) => {
+        const userInfo = {
+            fields: "name,picture.width(400).height(400)",
+        };
+        FB.api("/me", userInfo, (response) => {
             if (response.error) this.handleFBError(response.error);
             this.setState({ user: response as UserInfo });
 
-            FB.api(`${this.state.user!.id}/friends`, (response) => {
+            // TODO use promises to make more async
+            FB.api(`${this.state.user!.id}/friends`, userInfo, (response) => {
                 if (response.error) this.handleFBError(response.error);
                 this.setState({ friendsInApp: response.data as UserInfo[] });
                 this.setState({ gettingFriends: true });
-                FB.api(`/${this.state.user!.id}/taggable_friends`, {
-                    fields: "name,picture.width(400).height(400)",
-                }, this.collectFriends);
+                FB.api(`/${this.state.user!.id}/taggable_friends`, userInfo, this.collectFriends);
             });
         });
     }

@@ -11,7 +11,7 @@ body {
   line-height: 1.4;
   color: #222;
   margin: 0;
-  padding: 0;
+  padding: 24px;
   background-color: color(var(--primary-color) tint(90%) hue(+80));
 }
 
@@ -24,12 +24,8 @@ h6 {
   line-height: 1.2;
 }
 
-#app {
-  padding: 24px;
-}
-
 @media (max-width: 400px) {
-  #app {
+  body {
     padding: 10px;
   }
 }

@@ -4,6 +4,7 @@ import autobind = require("autobind-decorator");
 
 import "./game.css";
 
+import Tile from "./Tile";
 import ChooseTurn from "./ClientAction/ChooseTurn";
 import Complete from "./ClientAction/Complete";
 import Question from "./ClientAction/Question";
@@ -194,44 +195,27 @@ export default class Game extends React.Component<GameProps, GameState> {
             }
         }
         return (
-            <div>
+            <div className="game">
+                <p>
+                    Playing with {this.props.game.opponent.name}
+                    {this.props.game.opponent.picture !== undefined &&
+                        !this.props.game.opponent.picture.data.is_silhouette &&
+                        <img className="opponent" src={this.props.game.opponent.picture.data.url} />}
+                </p>
                 {this.state.pendingServer ? <p>Waiting...</p> : (
                     <div className="action">{actionUI}</div>
                 )}
                 <div className="game-board">
-                    {this.props.game.guessableFriends.map((friend) => {
-                        let classes = "game-tile";
-                        let eliminated = false;
-                        if (this.props.game.chosenFriend !== null && friend.id === this.props.game.chosenFriend) {
-                            classes += " game-tile-chosen";
-                        }
-                        if (this.state.pendingEliminations && (this.state.pendingEliminations as userID[]).some((id) => friend.id === id)) {
-                            classes += " game-tile-pending-elimination";
-                        }
-                        if (this.props.game.eliminatedFriends.some((id) => friend.id === id)) {
-                            classes += " game-tile-eliminated";
-                            eliminated = true;
-                        }
-                        return (
-                            <div
-                                className={classes}
-                                key={friend.id}
-                                onClick={this.onFriendClick(friend)}
-                                onMouseMove={this.onScrubMove}
-                                onMouseOver={this.onScrubStart}
-                                onMouseOut={this.onScrubEnd}
-                                // onTouchMove={this.onScrubMove}
-                                // onTouchStart={this.onScrubStart}
-                                // onTouchEnd={this.onScrubEnd}
-                                tabIndex={eliminated ? -1 : 0}
-                            >
-                                <div className="game-tile-contents">
-                                    {friend.picture && <img src={friend.picture.data.url} alt={`${friend.name} picture`} />}
-                                </div>
-                                <div className="game-tile-text">{friend.name}</div>
-                            </div>
-                        );
-                    })}
+                    {this.props.game.guessableFriends.map((friend) => (
+                        <Tile
+                            key={friend.id}
+                            friend={friend}
+                            chosen={this.props.game.chosenFriend !== null && friend.id === this.props.game.chosenFriend}
+                            pendingElimination={this.state.pendingEliminations !== undefined && (this.state.pendingEliminations as userID[]).some((id) => friend.id === id)}
+                            eliminated={this.props.game.eliminatedFriends.some((id) => friend.id === id)}
+                            onClick={this.onFriendClick(friend)}
+                        />
+                    ))}
                 </div>
             </div>
         );

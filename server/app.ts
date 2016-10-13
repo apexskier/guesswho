@@ -29,6 +29,7 @@ const knownPlayers: { [id: string]: Player } = {};
 const connectedPlayers: { [id: string]: SocketIO.Socket } = {};
 const activeGames: ServerGame[] = [];
 const gamesByPlayer: { [id: string]: ServerGame } = {};
+const numTilesPerGame = 25;
 
 const range: number[] = [];
 for (let i = 0; i < 50; i++) range.push(i);
@@ -99,24 +100,27 @@ export default class WebApi {
                 Object.keys(connectedPlayers).forEach((id) => {
                     const connectedPlayer = knownPlayers[id];
 
-                    console.log(`testing onlinestatus for ${knownPlayers[id].user.name}`);
                     if (connectedPlayer.friendsInApp.some((friend) => friend === user)) {
                         const data: { [id: string]: UserStatus } = {};
                         data[user] = status;
                         connectedPlayers[id].emit("onlineStatus", data);
-                        console.log(`emitting onlinestatus to ${knownPlayers[id].user.name}`, data);
+                        console.log(`emitting onlinestatus for ${knownPlayers[user].user.name} to ${knownPlayers[id].user.name}`, data);
                     }
                 });
             }
 
             socket.on("init", (data: InitializationMessage) => {
+                if (!data.me) {
+                    console.error("no user info provided");
+                    return;
+                }
                 player = {
                     user: data.me,
                     friends: data.friends,
                     friendsInApp: data.friendsInApp,
                     token: data.token,
                 };
-                console.log("recieved init", data.me);
+                // console.log("recieved init", data.me);
                 knownPlayers[player.user.id] = player;
                 if (connectedPlayers[player.user.id]) {
                     connectedPlayers[player.user.id].disconnect(true);
@@ -131,16 +135,19 @@ export default class WebApi {
                         } as UserStatus;
                         const game = findGameForUser(friend);
                         if (game) {
-                            status.playing = knownPlayers[friend].user;
+                            status.playing = knownPlayers[Object.keys(game.players).find((k) => k !== friend)].user;
                         }
                         statuses[friend] = status;
                     }
                 });
-                updateStatusForUser({ online: true }, player.user.id);
+                console.log("emitting initial onlinestatus", statuses);
                 socket.emit("onlineStatus", statuses);
+                updateStatusForUser({ online: true }, player.user.id);
                 const game = findGameForUser(player.user.id);
                 if (game) {
                     socket.emit("gameUpdate", gameLogic.clientGameFor(game, player));
+                } else {
+                    socket.emit("gameUpdate", null);
                 }
             });
 
@@ -152,10 +159,10 @@ export default class WebApi {
                     if (withPlayer) {
                         const game = gameLogic.newGame(player, withPlayer);
                         shuffle(game.guessableFriends);
-                        if (game.guessableFriends.length >= 16) {
-                            game.guessableFriends = game.guessableFriends.slice(0, 16);
+                        if (game.guessableFriends.length >= numTilesPerGame) {
+                            game.guessableFriends = game.guessableFriends.slice(0, numTilesPerGame);
                         } else {
-                            game.guessableFriends = game.guessableFriends.concat(shuffle(fakeFriends).slice(0, 16 - game.guessableFriends.length));
+                            game.guessableFriends = game.guessableFriends.concat(shuffle(fakeFriends).slice(0, numTilesPerGame - game.guessableFriends.length));
                         }
 
                         activeGames.push(game);
