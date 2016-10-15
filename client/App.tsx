@@ -171,8 +171,7 @@ export default class App extends React.Component<AppProps, AppState> {
     refreshPlayableFriends(): Promise<{}> {
         return new Promise((resolve, reject) => {
             if (this.state.user) {
-                // TODO use promises to make more async
-                FB.api(`${this.state.user!.id}/friends`, this.state.user, (response) => {
+                FB.api(`${this.state.user!.id}/friends`, userInfo, (response) => {
                     if (response.error) {
                         reject({
                             type: "facebook",
