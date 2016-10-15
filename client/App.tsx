@@ -1,5 +1,4 @@
 import * as React from "react";
-import * as FB from "FB";
 import * as io from "socket.io-client";
 import autobind = require("autobind-decorator");
 
@@ -7,6 +6,7 @@ import "./base.css";
 
 import Bugsnag from "./bugsnag";
 import ga from "./analytics";
+import FB from "./facebook";
 import Login from "./components/Login";
 import Logout from "./components/Logout";
 import Landing from "./components/Landing";
@@ -15,7 +15,9 @@ import Game from "./components/Game";
 (window as any).React = React;
 
 
-interface AppProps {}
+interface AppProps {
+    fatalError?: FatalError;
+}
 
 interface AppState {
     loading?: boolean;
@@ -26,6 +28,7 @@ interface AppState {
     token?: string;
     onlineStatus?: { [player: string]: UserStatus };
     activeGame?: ClientGame | null;
+    fatalError?: FatalError;
 }
 
 export default class App extends React.Component<AppProps, AppState> {
@@ -43,7 +46,9 @@ export default class App extends React.Component<AppProps, AppState> {
             onlineStatus: {},
         };
 
-        this.checkLogin();
+        if (FB !== null) {
+            this.checkLogin();
+        }
     }
 
     componentDidMount() {
@@ -181,7 +186,15 @@ export default class App extends React.Component<AppProps, AppState> {
     }
 
     render() {
-        if (this.state.loading) {
+        if (this.state.fatalError || this.props.fatalError) {
+            const fatalError = this.state.fatalError || this.props.fatalError;
+            return (
+                <div>
+                    <h2>{fatalError!.title}</h2>
+                    <p>{fatalError!.message}</p>
+                </div>
+            );
+        } else if (this.state.loading) {
             if (this.state.user) {
                 if (this.state.activeGame) {
                     Bugsnag.context = "Landing";

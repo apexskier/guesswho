@@ -2,6 +2,12 @@
     "compilerOptions": {
         "outDir": "../dist/",
         "sourceMap": true,
+        "lib": [
+            "es6",
+            "es2015",
+            "dom",
+            "scripthost"
+        ],
         "noImplicitAny": true,
         "module": "commonjs",
         "target": "es6",

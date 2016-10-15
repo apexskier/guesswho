@@ -24,6 +24,7 @@ module.exports = {
     stats,
 
     entry: [
+        'whatwg-fetch',
         './client/index.tsx',
     ],
 
@@ -33,11 +34,6 @@ module.exports = {
 
     resolve: {
         extensions: ['', '.webpack.js', '.web.js', '.ts', '.tsx', '.js', '.css'],
-    },
-
-    externals: {
-        FB: 'FB',
-        Bugsnag: 'Bugsnag',
     },
 
     module: {
@@ -51,7 +47,15 @@ module.exports = {
         loaders: [
             {
                 test: /\.tsx?$/,
-                loader: 'ts',
+                loaders: [
+                    `babel?${JSON.stringify({
+                        presets: [
+                            "es2015",
+                            "stage-0",
+                        ],
+                    })}`,
+                    'ts',
+                ]
             },
             {
                 test: /\.json$/,

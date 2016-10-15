@@ -25,3 +25,8 @@ interface Object {
     */
     assign(target: any, ...sources: any[]): any;
 }
+
+declare interface FatalError {
+    title: string;
+    message: string;
+}

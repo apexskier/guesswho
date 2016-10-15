@@ -1,6 +1,6 @@
 import * as React from "react";
-import * as FB from "FB";
 
+import FB from "../facebook";
 import "./Logout.css";
 
 
