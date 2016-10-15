@@ -2,10 +2,13 @@ import * as React from "react";
 import * as ReactDOM from "react-dom";
 import * as FB from "FB";
 
+import "./env";
 import App from "./App";
+import ga from "./analytics";
+import Bugsnag from "./bugsnag";
 
 FB.init({
-    appId: "1773551739581397",
+    appId: FACEBOOK_APP_ID,
     xfbml: true,
     version: "v2.7",
 });

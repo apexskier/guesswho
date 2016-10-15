@@ -3,6 +3,8 @@ import autobind = require("autobind-decorator");
 
 import "./action.css"
 
+import sendAction from "../../sendAction";
+
 
 interface ClientActionProps {
     socket: SocketIOClient.Socket;
@@ -18,7 +20,7 @@ interface ClientActionState {
 export default class ClientAction extends React.PureComponent<ClientActionProps, ClientActionState> {
     @autobind
     protected sendResponse(response: ClientResponse) {
-        this.props.socket.emit("action", response);
+        sendAction(this.props.socket, response);
         this.props.onComplete();
     }
 }

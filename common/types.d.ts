@@ -3,6 +3,7 @@ declare type userID = string;
 declare interface UserInfo {
     name: string;
     id: userID;
+    email?: string;
     picture?: {
         data: {
             is_silhouette: boolean;

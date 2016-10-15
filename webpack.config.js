@@ -1,4 +1,6 @@
 const ExtractTextPlugin = require("extract-text-webpack-plugin");
+const webpack = require("webpack");
+
 const isDebug = process.env.NODE_ENV !== 'production';
 
 
@@ -35,6 +37,7 @@ module.exports = {
 
     externals: {
         FB: 'FB',
+        Bugsnag: 'Bugsnag',
     },
 
     module: {
@@ -49,6 +52,10 @@ module.exports = {
             {
                 test: /\.tsx?$/,
                 loader: 'ts',
+            },
+            {
+                test: /\.json$/,
+                loader: 'json',
             },
             {
                 test: /\.css$/,
@@ -71,5 +78,11 @@ module.exports = {
 
     plugins: [
         new ExtractTextPlugin('./dist/styles.css'),
+        new webpack.DefinePlugin({
+            NODE_ENV: JSON.stringify(process.env.NODE_ENV || 'development'),
+            GOOGLE_ANALYTICS_ID: JSON.stringify('REDACTED'),
+            BUGSNAG_API_KEY: JSON.stringify('REDACTED'),
+            FACEBOOK_APP_ID: JSON.stringify(!isDebug ? 'REDACTED' : 'REDACTED'),
+        }),
     ],
 };

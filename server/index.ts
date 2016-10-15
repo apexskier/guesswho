@@ -4,6 +4,6 @@ import "../common/polyfills";
 import WebApi from "./app";
 
 
-let port = 7111;
-let api = new WebApi(express(), port);
+const port = 7111;
+const api = new WebApi(express(), port);
 api.run();

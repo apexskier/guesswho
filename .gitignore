@@ -1,7 +1,6 @@
 node_modules/
 .DS_Store
 dist/
-client/**/*.js
 client/**/*.map
 server/**/*.js
 server/**/*.map

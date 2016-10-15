@@ -5,6 +5,8 @@ import autobind = require("autobind-decorator");
 
 import "./base.css";
 
+import Bugsnag from "./bugsnag";
+import ga from "./analytics";
 import Login from "./components/Login";
 import Logout from "./components/Logout";
 import Landing from "./components/Landing";
@@ -53,6 +55,7 @@ export default class App extends React.Component<AppProps, AppState> {
 
         this.socket.on("gameUpdate", (data: ClientGame) => {
             this.setState({ activeGame: data });
+            Bugsnag.refresh();
         });
 
         this.socket.on("disconnect", () => {
@@ -115,11 +118,17 @@ export default class App extends React.Component<AppProps, AppState> {
     handleAuth(response: AuthResponse) {
         this.setState({ token: response.accessToken });
         const userInfo = {
-            fields: "name,picture.width(400).height(400)",
+            fields: "name,email,picture.width(400).height(400)",
         };
         FB.api("/me", userInfo, (response) => {
             if (response.error) this.handleFBError(response.error);
-            this.setState({ user: response as UserInfo });
+            const r: UserInfo = response;
+            this.setState({ user: r });
+            Bugsnag.user = {
+                id: r.id,
+                name: r.name,
+                email: r.email,
+            };
 
             // TODO use promises to make more async
             FB.api(`${this.state.user!.id}/friends`, userInfo, (response) => {
@@ -156,6 +165,13 @@ export default class App extends React.Component<AppProps, AppState> {
     render() {
         if (this.state.loading) {
             if (this.state.user) {
+                if (this.state.activeGame) {
+                    Bugsnag.context = "Landing";
+                    ga("send", "screenview", {screenName: "Landing"});
+                } else {
+                    Bugsnag.context = "Game";
+                    ga("send", "screenview", {screenName: "Game"});
+                }
                 return (
                     <div>
                         <div className="user-controls">
@@ -186,9 +202,13 @@ export default class App extends React.Component<AppProps, AppState> {
                     </div>
                 );
             } else {
+                Bugsnag.context = "Login";
+                ga("send", "screenview", {screenName: "Login"});
                 return <Login onLoggedIn={this.handleAuth} />;
             }
         } else {
+            Bugsnag.context = "Loading";
+            ga("send", "screenview", {screenName: "Loading"});
             return <p>Loading...</p>;
         }
     }

@@ -4,6 +4,8 @@ import autobind = require("autobind-decorator");
 
 import "./game.css";
 
+import ga from "../../analytics";
+import sendAction from "../sendAction";
 import Tile from "./Tile";
 import ChooseTurn from "./ClientAction/ChooseTurn";
 import Complete from "./ClientAction/Complete";
@@ -46,11 +48,12 @@ export default class Game extends React.Component<GameProps, GameState> {
             if (this.props.game.status !== "winner") {
                 const actionRequest = (this.props.game.status as ClientActionRequest);
                 if (actionRequest.type === "ChoosePerson" || actionRequest.type === "Guess") {
-                    this.props.socket.emit("action", {
+                    sendAction(this.props.socket, {
                         token: this.props.token,
                         type: actionRequest.type,
                         response: friend.id,
                     } as ClientChoosePersonResponse);
+                    ga("send", "event", "action", actionRequest.type, friend.id);
                     this.actionComplete();
                 } else if (actionRequest.type === "Eliminate") {
                     let elims: userID[];
@@ -78,7 +81,7 @@ export default class Game extends React.Component<GameProps, GameState> {
 
     @autobind
     private eliminate(ev: React.MouseEvent) {
-        this.props.socket.emit("action", {
+        sendAction(this.props.socket, {
             token: this.props.token,
             type: "Eliminate",
             response: this.state.pendingEliminations || [],
@@ -88,7 +91,7 @@ export default class Game extends React.Component<GameProps, GameState> {
 
     @autobind
     private complete(ev: React.MouseEvent) {
-        this.props.socket.emit("action", {
+        sendAction(this.props.socket, {
             token: this.props.token,
             type: "Cleanup",
             response: "",
