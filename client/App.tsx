@@ -80,6 +80,11 @@ export default class App extends React.Component<AppProps, AppState> {
 
     handleFBError(error: FBError) {
         if (error.type === "OAuthException" && error.code === 463 || error.code === 467) {
+            ga("send", "event", {
+                eventCategory: "auth",
+                eventAction: "OAuthException",
+                eventValue: error,
+            });
             this.handleLoggedOut();
         }
         console.error(error);
@@ -116,6 +121,10 @@ export default class App extends React.Component<AppProps, AppState> {
 
     @autobind
     handleAuth(response: AuthResponse) {
+        ga("send", "event", {
+            eventCategory: "auth",
+            eventAction: "authed",
+        });
         this.setState({ token: response.accessToken });
         const userInfo = {
             fields: "name,email,picture.width(400).height(400)",
@@ -142,6 +151,10 @@ export default class App extends React.Component<AppProps, AppState> {
 
     @autobind
     handleLoggedOut() {
+        ga("send", "event", {
+            eventCategory: "auth",
+            eventAction: "logout",
+        });
         this.setState({
             user: undefined,
             token: undefined,
@@ -152,6 +165,11 @@ export default class App extends React.Component<AppProps, AppState> {
     @autobind
     setUpWith(friend: UserInfo) {
         if (!this.state.gettingFriends) {
+            ga("send", "event", {
+                eventCategory: "game",
+                eventAction: "start",
+                eventValue: friend.id,
+            });
             return () => {
                 this.socket.emit("start", {
                     token: this.state.token,
