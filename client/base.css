@@ -30,8 +30,35 @@ h6 {
   }
 }
 
+.authed-app {
+  @apply --fade-in;
+}
+
 .user-controls {
   float: right;
   text-align: right;
   font-size: 0.8em;
+
+  & .refresh-button {
+    @apply --button;
+  }
+
+  & button {
+    margin-bottom: 4px;
+    margin-left: 8px;
+
+    &:last-child {
+      margin-left: 0;
+    }
+  }
+}
+
+@keyframes fade {
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
 }

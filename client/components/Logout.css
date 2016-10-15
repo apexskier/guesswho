@@ -2,6 +2,4 @@
 
 .logout-button {
   @apply --button;
-
-  margin-bottom: 4px;
 }

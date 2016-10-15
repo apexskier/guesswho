@@ -8,7 +8,6 @@
   justify-content: center;
 
   & button {
-    @apply --button;
     @apply --button-primary;
 
     width: 100%;

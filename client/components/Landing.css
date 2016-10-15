@@ -1,6 +1,17 @@
+@import "../variables.css";
+
 .landing {
+  @apply --fade-in;
+
   & .friends {
     padding-left: 0;
     list-style: none;
+  }
+
+  & .invite-button {
+    @apply --button-green;
+
+    float: right;
+    margin-bottom: 4px;
   }
 }

@@ -20,8 +20,9 @@
     }
   }
 
-  --button-primary: {
-    padding: 10px 16px;
+  --button-green: {
+    @apply --button;
+
     background-color: var(--primary-color);
     background-image:
       linear-gradient(
@@ -51,5 +52,18 @@
           color(var(--primary-color) tint(3%)) 80%
         );
     }
+  }
+
+  --button-primary: {
+    @apply --button-green;
+
+    padding: 10px 16px;
+  }
+
+  --fade-in: {
+    animation-name: fade;
+    animation-duration: 200ms;
+    animation-iteration-count: 1;
+    animation-timing-function: ease-in-out;
   }
 }
