@@ -48,13 +48,11 @@ export default class App extends React.Component<AppProps, AppState> {
             loading: true,
             onlineStatus: {},
         };
-
-        if (FB !== null) {
-            this.checkLogin();
-        }
     }
 
     componentDidMount() {
+        this.checkLogin();
+
         this.socket.on("onlineStatus", (data: { [player: string]: UserStatus }) => {
             this.setState({
                 onlineStatus: Object.assign(this.state.onlineStatus, data),
