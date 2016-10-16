@@ -1,6 +1,8 @@
 @import "../../variables.css";
 
 .game {
+  user-select: none;
+
   & .game-board {
     margin: 0;
     list-style: none;

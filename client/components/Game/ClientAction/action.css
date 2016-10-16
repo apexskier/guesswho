@@ -22,7 +22,6 @@
   }
 
   & button {
-    @apply --button;
     @apply --button-primary;
 
     margin-left: var(--game-tile-border);

@@ -53,7 +53,9 @@
   }
 
   & .game-tile-text {
-    transition: transform 150ms ease-in-out;
+    transition:
+      transform 150ms ease-in-out,
+      opacity 150ms ease-in-out;
     position: absolute;
     bottom: 0;
     left: 0;
@@ -103,6 +105,20 @@
     & .game-tile-contents {
       filter: grayscale(1) brightness(80%);
       transform: rotateX(180deg);
+    }
+  }
+
+  &.game-tile-zoomed {
+    outline: none;
+
+    & .game-tile-contents {
+      filter: none;
+      transform: none;
+      opacity: 1;
+    }
+
+    & .game-tile-text {
+      opacity: 0;
     }
   }
 }
