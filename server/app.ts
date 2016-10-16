@@ -84,6 +84,7 @@ export default class WebApi {
 
     private initializeWebsocket(io: SocketIO.Server) {
         io.on("connection", (socket) => {
+            console.log("received connection");
             let player: Player | null = null;
 
             function checkAuth(callback: (data: AuthedMessage) => void): (data: AuthedMessage) => void {
@@ -100,12 +101,13 @@ export default class WebApi {
                 Object.keys(connectedPlayers).forEach((id) => {
                     const connectedPlayer = knownPlayers[id];
 
-                    if (connectedPlayer.friendsInApp.some((friend) => friend === user)) {
+                    // TODO
+                    // if (connectedPlayer.friendsInApp.some((friend) => friend === user)) {
                         const data: { [id: string]: UserStatus } = {};
                         data[user] = status;
                         connectedPlayers[id].emit("onlineStatus", data);
                         console.log(`emitting onlinestatus for ${knownPlayers[user].user.name} to ${knownPlayers[id].user.name}`, data);
-                    }
+                    // }
                 });
             }
 
@@ -114,13 +116,22 @@ export default class WebApi {
                     console.error("no user info provided");
                     return;
                 }
-                player = {
-                    user: data.me,
-                    friends: data.friends,
-                    friendsInApp: data.friendsInApp,
-                    token: data.token,
-                };
-                // console.log("recieved init", data.me);
+                if (!player) {
+                    player = {
+                        user: data.me,
+                        friends: data.friends,
+                        friendsInApp: data.friendsInApp,
+                        token: data.token,
+                    };
+                } else {
+                    player = Object.assign(player, {
+                        user: data.me,
+                        friends: data.friends,
+                        friendsInApp: data.friendsInApp,
+                        token: data.token,
+                    });
+                }
+                console.log("recieved init", data.me);
                 knownPlayers[player.user.id] = player;
                 if (connectedPlayers[player.user.id]) {
                     connectedPlayers[player.user.id].disconnect(true);
@@ -130,6 +141,7 @@ export default class WebApi {
                 player.friendsInApp.forEach((friend) => {
                     const friendPlayer = knownPlayers[friend];
                     if (friendPlayer) {
+                        console.log("DEBUG", friend, Object.keys(connectedPlayers));
                         const status = {
                             online: friend in connectedPlayers,
                         } as UserStatus;
@@ -384,7 +396,6 @@ export default class WebApi {
 
             function logout() {
                 if (player) {
-                    console.log(player);
                     updateStatusForUser({ online: false }, player.user.id);
                     delete connectedPlayers[player.user.id];
                     player = null;
@@ -392,12 +403,12 @@ export default class WebApi {
             }
 
             socket.on("disconnect", () => {
-                console.log("disconnect", player);
+                console.log("disconnect", player ? player.user : "");
                 logout();
             });
 
             socket.on("logout", () => {
-                console.log("logout", player);
+                console.log("logout", player ? player.user : "");
                 logout();
             });
 

@@ -95,8 +95,12 @@ export default class App extends React.Component<AppProps, AppState> {
             });
             this.handleLoggedOut();
         }
-        this.setState({ loading: false });
+        this.setState({ fatalError: {
+            title: "Error",
+            message: JSON.stringify(error),
+        } });
         console.error(error);
+        Bugsnag.notify("FBError", error.type, error);
     }
 
     @autobind
@@ -152,20 +156,22 @@ export default class App extends React.Component<AppProps, AppState> {
                 name: r.name,
                 email: r.email,
             };
-
-            this.refreshAllFriends().then((res) => {
-                this.initServerConnection();
-            }).catch((err) => {
-                if ((err.type && err.type === "facebook")) {
-                    this.handleFBError(err.error);
-                }
-            });
+            this.refreshAllFriends();
         });
     }
 
     @autobind
     refreshAllFriends(): Promise<{}> {
-        return Promise.all([ this.refreshPlayableFriends(), this.refreshTaggableFriends() ]);
+        return Promise.all([
+            this.refreshPlayableFriends(),
+            this.refreshTaggableFriends(),
+        ]).then((res) => {
+            this.initServerConnection();
+        }).catch((err) => {
+            if ((err.type && err.type === "facebook")) {
+                this.handleFBError(err.error);
+            }
+        });
     }
 
     refreshPlayableFriends(): Promise<{}> {
