@@ -44,7 +44,7 @@ export default class Game extends React.Component<GameProps, GameState> {
 
     @autobind
     private onFriendClick(friend: UserInfo) {
-        return (ev: React.MouseEvent) => {
+        return () => {
             if (this.props.game.status !== "winner") {
                 const actionRequest = (this.props.game.status as ClientActionRequest);
                 if (actionRequest.type === "ChoosePerson" || actionRequest.type === "Guess") {

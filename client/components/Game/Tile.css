@@ -1,5 +1,10 @@
 @import "../../variables.css";
 
+:root {
+  --x-width: 6%;
+  --x-rotate: 45deg;
+}
+
 .game-tile {
   margin: 0;
   list-style: none;
@@ -34,16 +39,28 @@
     width: 100%;
     padding-bottom: 100%; /* force div to be square */
     background-size: cover;
+    position: relative;
 
+    &::before,
     &::after {
       content: "";
       position: absolute;
-      top: 0;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      border-radius: 3px;
-      box-shadow: inset 0 1px 1px 1px rgba(255, 255, 255, 0.2);
+      background-color: #fff;
+      border-radius: 1000px;
+      width: var(--x-width);
+      height: 80%;
+      top: 10%;
+      left: calc(50% - var(--x-width) / 2);
+      transition: opacity 150ms ease-in-out;
+      opacity: 0;
+    }
+
+    &::before {
+      transform: rotate(var(--x-rotate));
+    }
+
+    &::after {
+      transform: rotate(calc(0deg - var(--x-rotate)));
     }
 
     & img {
@@ -87,6 +104,11 @@
       filter: grayscale(1) brightness(80%);
       transform: rotateX(180deg) translateZ(0);
       opacity: 0.5;
+
+      &::before,
+      &::after {
+        opacity: 1;
+      }
     }
 
     & .game-tile-text {
@@ -105,6 +127,11 @@
     & .game-tile-contents {
       filter: grayscale(1) brightness(80%);
       transform: rotateX(180deg);
+
+      &::before,
+      &::after {
+        opacity: 1;
+      }
     }
   }
 
@@ -115,6 +142,11 @@
       filter: none;
       transform: none;
       opacity: 1;
+
+      &::before,
+      &::after {
+        opacity: 0;
+      }
     }
 
     & .game-tile-text {

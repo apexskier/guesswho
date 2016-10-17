@@ -7,7 +7,7 @@ import "./Tile.css";
 
 interface TileProps {
     friend: UserInfo;
-    onClick: (ev: React.MouseEvent) => void;
+    onClick: () => void;
     chosen: boolean;
     pendingElimination: boolean;
     eliminated: boolean;
@@ -30,7 +30,11 @@ function getWindowSize() {
 
 export default class Tile extends React.Component<TileProps, TileState> {
     private trackedTouch: number | null = null;
-    private previousTransform: string | null = null;
+
+    private clickTracked: boolean = false;
+    private zoomTracked: boolean = false;
+
+    private zoomPreviousTransform: string | null = null;
     private zoomTimeout: number;
 
     private onScrubStart(el: HTMLElement) {
@@ -44,7 +48,7 @@ export default class Tile extends React.Component<TileProps, TileState> {
     }
 
     private onScrubMove(el: HTMLElement, ev: WithClientCoords) {
-        if (this.previousTransform === null) {
+        if (!this.zoomTracked) {
             const rect = el.getBoundingClientRect();
             const xDeg = (((ev.clientY - rect.top) / rect.height) - .5) * 20;
             const yDeg = (((ev.clientX - rect.left) / rect.width) - .5) * 20;
@@ -58,25 +62,38 @@ export default class Tile extends React.Component<TileProps, TileState> {
 
     private startZoom(el: HTMLElement) {
         el.classList.add("game-tile-zoomed");
-        this.previousTransform = el.style.transform;
+        this.zoomPreviousTransform = el.style.transform;
+        this.zoomTracked = true;
         const rect = el.getBoundingClientRect();
-        const rectMid = rect.left + rect.width / 2;
+        const rectMid = {
+            w: rect.left + (rect.width / 2),
+            h: rect.top + (rect.height / 2),
+        };
         const wSize = getWindowSize();
-        const moveX = (wSize.width / 2) - rectMid;
-        console.log(rectMid, wSize.width, moveX);
+        const moveX = ((wSize.width / 2) - rectMid.w) - 8; // TODO: this "- 8" is a hack
+        const moveY = ((wSize.width / 2) - rectMid.h);
         el.style.transition = null;
-        el.style.transform = `scale(3) translateZ(30px) translateX(${moveX / 3}px)`;
-        el.style.zIndex = `100`;
+        el.style.transform = `scale(3) translateZ(30px) translateX(${moveX / 3}px) translateY(${moveY / 3}px)`;
+        el.style.zIndex = "100";
         el.removeEventListener("transitionend", this.removeZIndex);
     }
 
     private stopZoom(el: HTMLElement) {
         window.clearTimeout(this.zoomTimeout);
-        el.classList.remove("game-tile-zoomed");
-        el.style.transition = null;
-        el.style.transform = this.previousTransform;
-        this.previousTransform = null;
-        el.addEventListener("transitionend", this.removeZIndex);
+        if (this.zoomTracked) {
+            el.classList.remove("game-tile-zoomed");
+            el.style.transition = null;
+            el.style.transform = this.zoomPreviousTransform;
+            this.zoomPreviousTransform = null;
+            this.zoomTracked = false;
+            el.addEventListener("transitionend", this.removeZIndex);
+        }
+    }
+
+    private click() {
+        if (!this.zoomTracked) {
+            this.props.onClick();
+        }
     }
 
     @autobind
@@ -106,6 +123,7 @@ export default class Tile extends React.Component<TileProps, TileState> {
 
     @autobind
     private onMouseOut(ev: React.MouseEvent) {
+        this.clickTracked = false;
         this.onScrubEnd(ev.currentTarget as HTMLElement);
         this.stopZoom(ev.currentTarget as HTMLElement);
     }
@@ -116,9 +134,6 @@ export default class Tile extends React.Component<TileProps, TileState> {
             const touch = Array.from(ev.changedTouches).find((t) => t.identifier === this.trackedTouch);
             if (touch) {
                 this.onScrubMove(ev.currentTarget as HTMLElement, touch);
-                if (!this.previousTransform) {
-                    // ev.preventDefault();
-                }
             }
         }
     }
@@ -138,6 +153,7 @@ export default class Tile extends React.Component<TileProps, TileState> {
             const touch = Array.from(ev.changedTouches).find((t) => t.identifier === this.trackedTouch);
             if (touch) {
                 this.trackedTouch = null;
+                this.click();
                 this.onScrubEnd(ev.currentTarget as HTMLElement);
                 this.stopZoom(ev.currentTarget as HTMLElement);
             }
@@ -146,11 +162,16 @@ export default class Tile extends React.Component<TileProps, TileState> {
 
     @autobind
     private onMouseUp(ev: React.MouseEvent) {
+        if (this.clickTracked) {
+            this.click();
+        }
+        this.clickTracked = false;
         this.stopZoom(ev.currentTarget as HTMLElement);
     }
 
     @autobind
     private onMouseDown(ev: React.MouseEvent) {
+        this.clickTracked = true;
         this.delayStartZoom(ev.currentTarget as HTMLElement);
         ev.preventDefault(); // prevent text selection
     }
@@ -174,7 +195,6 @@ export default class Tile extends React.Component<TileProps, TileState> {
         return (
             <div
                 className={classes}
-                onClick={this.props.onClick}
                 onMouseMove={this.onMouseMove}
                 onMouseOver={this.onMouseOver}
                 onMouseOut={this.onMouseOut}
