@@ -13,7 +13,7 @@
     "start": "node --harmony server/index.js",
     "clean": "git clean -fdX --exclude='!node_modules/' --exclude='!typings/'",
     "wipe": "git clean -fdX",
-    "install": "yarn && typings install",
+    "postinstall": "typings install",
     "deploy": "cp index.html /var/www/guesswho.website/ && cp -r dist /var/www/guesswho.website/"
   },
   "author": "Cameron Little <cameron@camlittle.com>",
@@ -38,6 +38,7 @@
     "stylelint": "^7.4.2",
     "stylelint-config-standard": "^13.0.2",
     "ts-loader": "^0.8.2",
+    "typescript": "^2.0.3",
     "typings": "^1.4.0",
     "webpack": "^1.13.2",
     "webpack-dev-server": "^1.16.1"
@@ -53,7 +54,6 @@
     "react-dom": "^15.3.2",
     "socket.io": "^1.4.8",
     "socket.io-client": "^1.4.8",
-    "typescript": "^2.0.3",
     "whatwg-fetch": "^1.0.0"
   }
 }
